@@ -121,6 +121,8 @@ All return the envelope from section 4. Owner in brackets.
 
 Frontend flow after approve: call `/api/plan/:id/approve`, then `/api/dispatch`. If dispatch returns `committed: false`, show the conflicts and call `/api/plan/generate` with trigger `resource_change`.
 
+**Sign-in (added after Phase 3).** When `DISPATCHER_PASSWORD` is set, every page and API needs a session: `POST /api/auth/login { name, password }` sets an httpOnly cookie (12 h), `POST /api/auth/logout` clears it, `GET /api/auth/me` returns `{ name, authEnabled }`. Without a session, pages redirect to `/login` and APIs return `401 { ok: false, error: { code: "UNAUTHORIZED" } }`. Scripts may send the header `x-dispatcher-password: <password>` instead (e.g. `curl -X POST .../api/seed -H "x-dispatcher-password: ..."`). Enforced in `proxy.js`.
+
 ### 5.3 Tool functions (Sam builds in `lib/tools/`, Ashish's agents call them)
 
 All exported from `lib/tools/index.js`.
