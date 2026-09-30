@@ -229,6 +229,12 @@ export default function IncidentsPage() {
                         <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
                           {inc.type}
                         </span>
+                        {inc.possibleDuplicateOf && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>Duplicate</span>
+                          </span>
+                        )}
                       </div>
 
                       {sev ? (

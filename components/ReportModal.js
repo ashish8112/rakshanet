@@ -82,6 +82,7 @@ function ReportForm({ onClose, initialLocation, resources = [], onSuccess }) {
       if (res.ok) {
         setSubmittedData({
           incident: res.data,
+          duplicates: res.data?.duplicates || [],
           etaMinutes: primaryResponder?.etaMinutes || 6,
           distanceKm: primaryResponder?.distanceKm || 2.5,
           unitName: primaryResponder?.resource.name || "Emergency Rapid Response Unit",
@@ -112,6 +113,19 @@ function ReportForm({ onClose, initialLocation, resources = [], onSuccess }) {
           Emergency call logged with code: <strong>{submittedData.incident.code || "INC-NEW"}</strong>
         </p>
 
+        {/* Duplicate Warning Alert if detected within 500m & 30m */}
+        {submittedData.duplicates && submittedData.duplicates.length > 0 && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-left text-xs mb-4 text-amber-950">
+            <span className="font-extrabold flex items-center gap-1.5 mb-1 text-amber-900">
+              <span>⚠️</span>
+              <span>Potential Duplicate Incident Linked</span>
+            </span>
+            <p className="text-[11px] text-amber-800 leading-snug">
+              A call was already reported nearby (~{submittedData.duplicates[0]?.distanceKm || 0.3} km away) recently. Both reports are linked to prevent double dispatch.
+            </p>
+          </div>
+        )}
+
         {/* Big ETA Callout (Uber style) */}
         <div className="bg-neutral-900 text-white rounded-2xl p-5 mb-5 text-center shadow-lg">
           <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
@@ -139,6 +153,7 @@ function ReportForm({ onClose, initialLocation, resources = [], onSuccess }) {
             <span className="font-bold text-emerald-600">Dispatched • En Route</span>
           </div>
         </div>
+
 
         <button
           onClick={onClose}

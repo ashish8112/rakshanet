@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 1
-**Next step:** Gate 1
+**Current phase:** 3
+**Next step:** Gate 3
 **Branch:** frontend
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -52,8 +52,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 - [x] 3.1 Before and after view for replanned plans ("what changed and why")
 - [x] 3.2 Escalation banner, duplicate warning, follow-up questions form (answer -> `PATCH` -> regenerate)
-- [ ] 3.3 Polish and phone-screen check
-
+- [x] 3.3 Polish and phone-screen check
 
 **Gate 3 (FEATURE FREEZE)**
 - [ ] Demo script runs 3 times in a row on the live link with no failure

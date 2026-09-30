@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ReportModal from "@/components/ReportModal";
@@ -114,6 +115,14 @@ export default function HomeDashboardPage() {
   const activeCount = incidents.filter((i) => i.status !== "resolved").length;
   const readyUnits = resources.filter((r) => r.status === "available").length;
 
+  // Step 3.2: Critical Escalation check (Severity 5 or uncovered deficit)
+  const hasCriticalEscalation = useMemo(() => {
+    return (
+      incidents.some((i) => i.severity === 5 && i.status !== "resolved") ||
+      Boolean(currentPlan?.uncovered && currentPlan.uncovered.length > 0)
+    );
+  }, [incidents, currentPlan]);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-neutral-950 font-sans">
       {/* Top Multi-Page Navigation Bar */}
@@ -124,8 +133,27 @@ export default function HomeDashboardPage() {
         onRefresh={loadData}
       />
 
+      {/* Step 3.2 Critical City-Wide Escalation Banner */}
+      {hasCriticalEscalation && (
+        <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-lg z-30 shrink-0">
+          <div className="flex items-center gap-2 truncate">
+            <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0" />
+            <span className="truncate">
+              🚨 CRITICAL ESCALATION: Severe emergency (Severity 5) / unit deficit active in Bengaluru.
+            </span>
+          </div>
+          <Link
+            href="/dispatch"
+            className="px-3 py-1 bg-white hover:bg-neutral-100 text-red-600 rounded-full text-[11px] font-extrabold shadow transition shrink-0 ml-3"
+          >
+            Review AI Plan →
+          </Link>
+        </div>
+      )}
+
       {/* Main Full-Screen Map Canvas */}
       <main className="flex-1 relative w-full h-full overflow-hidden">
+
         {/* Full-Bleed Map */}
         <div className="absolute inset-0 w-full h-full">
           <LeafletMap
