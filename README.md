@@ -2,10 +2,30 @@
 
 **An AI-assisted emergency control room for Bengaluru.** Four AI agents plan which ambulances, fire units and rescue teams go to which emergency, a human dispatcher approves every decision, and the plan updates itself when things change on the ground.
 
-Live demo: https://rakshanet-three.vercel.app
-
-Tutorial video (5 min, no login needed, choose English or हिंदी voice): https://rakshanet-three.vercel.app/tutorial · direct files: [English](https://rakshanet-three.vercel.app/tutorial.mp4) · [हिंदी](https://rakshanet-three.vercel.app/tutorial-hi.mp4)
 Built in 24 hours by team **CodeStorm** (Ashish, Daksh, Sam) for the Agentic AI hackathon.
+
+| | |
+| --- | --- |
+| 🎬 **Video tutorial** (5 min, no sign-in, voice in English or हिंदी) | https://rakshanet-three.vercel.app/tutorial |
+| 🚨 **Live app** | https://rakshanet-three.vercel.app |
+| 📋 **Demo walkthrough** | [docs/demo-script.md](docs/demo-script.md) |
+
+[![RakshaNet control room: the AI plan and who goes where, on a live map of Bengaluru](public/tutorial.jpg)](https://rakshanet-three.vercel.app/tutorial)
+
+## Trying the live app
+
+The control room is behind a sign-in, because in real use only dispatchers may report emergencies and send vehicles.
+
+- **Judges:** the password is in our hackathon submission. Sign in with your own name (it appears in the History log) and that password.
+- **Everyone else:** watch the [video tutorial](https://rakshanet-three.vercel.app/tutorial), or run it yourself (see [Setup](#setup)).
+
+A 2-minute tour once you are in:
+
+1. **New emergency** → **⚡ Quick fill** → paste `Kristu Jayanti college hostel mein aag lagi hai, 40 students bahar aa rahe hain` → **✨ Fill the form** → pick the place → **Save**. Watch the agents plan live.
+2. **✓ Approve & send units** → **⏩ Demo speed** to see the vehicles drive on the map.
+3. **Fleet** → an ambulance *On a job* → **Broke down**: the AI replaces only that vehicle and says why.
+4. Switch **✨ AI** to **✋ Manual** to dispatch without the AI.
+5. **History**: every action, with who did it and when.
 
 ---
 
@@ -71,7 +91,8 @@ When several emergencies happen at once (a flood, a building collapse, a road ac
 | Part | Technology |
 | --- | --- |
 | App | Next.js (App Router), JavaScript, Tailwind CSS |
-| Map | Leaflet + OpenStreetMap |
+| Map | Leaflet + OpenStreetMap; place search via Nominatim |
+| Voice input | Browser speech recognition (en-IN, hi-IN, kn-IN) |
 | AI | Google Gemini via `@google/genai` (JSON-only responses) |
 | Database | MongoDB Atlas via Mongoose (transactions for seed and dispatch) |
 | Hosting | Vercel (auto-deploys from `main`) |
@@ -80,21 +101,25 @@ When several emergencies happen at once (a flood, a building collapse, a road ac
 ## Project structure
 
 ```
-app/                  pages: control room (/), fleet, history, login; and the API routes
-proxy.js              sign-in guard for every page and API
-app/api/plan/         plan generate, current, history, approve, reject, edit
-app/api/logs/         agent timeline
-app/api/incidents/    report and update incidents (duplicate detection)
-app/api/resources/    units, hospitals, shelters
+app/                  pages: control room (/), fleet, history, login, tutorial (public); and the API routes
+proxy.js              sign-in guard for every page and API (login, /tutorial and the video files are public)
+app/api/plan/         generate, stream (live agent steps), manual, current, history, approve, reject, edit
+app/api/intake/       turn a caller's words (English, Hindi, Kannada) into a filled-in report
+app/api/geocode/      place search for the report form (OpenStreetMap Nominatim, Bengaluru only)
+app/api/incidents/    report, update and close incidents (duplicate detection)
+app/api/resources/    units, hospitals, shelters: add, remove, bed counts
 app/api/responders/   crew updates: arrived, unavailable, available, cleared
 app/api/dispatch/     transactional dispatch with re-validation
+app/api/activity/     the History log (who did what, when)
+app/api/logs/         agent timeline
 app/api/seed/         reset the database to the demo city
-lib/agents/           the Gemini agents, prompts and the Gemini helper
-lib/orchestrator/     the agent chain, escalation and plan decisions
+lib/agents/           the Gemini agents, prompts, the Gemini helper and the rule-based backup planner
+lib/orchestrator/     the agent chain, escalation, manual plans and plan decisions
 lib/tools/            deterministic tools: distance, ETA, nearest units, capacity, duplicates, validation
-lib/db/               MongoDB connection and models (Incident, Resource, Plan, AgentLog)
-components/           dashboard UI
+lib/db/               MongoDB connection and models (Incident, Resource, Plan, AgentLog, Activity)
+components/           the UI: emergency list, map, plan and manual panels, fleet, history, co-pilot, video player
 data/, scripts/       Bengaluru seed data and the Python script that generates it
+public/               the tutorial videos (English, Hindi) and their poster
 CONTRACT.md           the shared data shapes, API and tool contract the team built against
 ```
 
@@ -104,14 +129,19 @@ All responses use one envelope: `{ "ok": true, "data": ... }` or `{ "ok": false,
 
 | Endpoint | Purpose |
 | --- | --- |
+| `POST /api/auth/login`, `/logout`, `GET /api/auth/me` | Dispatcher sign-in |
 | `GET/POST /api/incidents`, `GET/PATCH /api/incidents/:id` | Report, list and update incidents |
-| `GET /api/resources?kind=` | Units, hospitals and shelters |
-| `POST /api/plan/generate` | Run the agents, returns the proposed plan and the agent logs |
+| `POST /api/incidents/:id/close` | Mark resolved, or cancel a report made by mistake (frees its vehicles) |
+| `POST /api/intake` | A caller's words in English, Hindi or Kannada → filled-in report |
+| `GET /api/geocode?q=` | Place search in Bengaluru |
+| `GET/POST /api/resources`, `PATCH/DELETE /api/resources/:id` | Units, hospitals and shelters; add or remove a unit; bed counts |
+| `POST /api/plan/generate`, `POST /api/plan/stream` | Run the agents (stream sends each step live) |
+| `POST /api/plan/manual` | A plan made by the dispatcher without the AI |
 | `GET /api/plan/current`, `GET /api/plan/history` | Current plan, all versions |
 | `POST /api/plan/:id/approve`, `/reject`, `/edit` | Dispatcher decisions (edit creates a new version) |
 | `POST /api/dispatch` | Commit an approved plan |
 | `POST /api/responders/update` | Crew events; says whether a replan is needed |
-| `GET /api/logs?planVersion=` | Agent timeline |
+| `GET /api/logs?planVersion=`, `GET /api/activity` | Agent timeline; History log |
 | `POST /api/seed` | Reset to demo data |
 
 Full shapes: [CONTRACT.md](CONTRACT.md).
