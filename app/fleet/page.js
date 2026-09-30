@@ -2,13 +2,16 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ReportModal from "@/components/ReportModal";
-import { getResources } from "@/components/api";
+import { getResources, updateResponder, generatePlan } from "@/components/api";
 
 export default function FleetPage() {
   const [resources, setResources] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [updatingId, setUpdatingId] = useState(null);
+  const [replanNotice, setReplanNotice] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   const loadData = () => {
@@ -28,6 +31,23 @@ export default function FleetPage() {
       ignore = true;
     };
   }, []);
+
+  const handleResponderEvent = async (resourceId, event) => {
+    if (updatingId) return;
+    setUpdatingId(resourceId);
+    setReplanNotice(null);
+
+    const res = await updateResponder({ resourceId, event });
+    if (res.ok) {
+      if (res.data?.replanNeeded) {
+        setReplanNotice(`Unit status updated to ${event}. Auto-triggering AI replanning (trigger: responder_update)...`);
+        await generatePlan({ trigger: "responder_update", resourceId });
+        setReplanNotice(`✓ Replan complete! New plan synthesized based on ${event} event.`);
+      }
+      loadData();
+    }
+    setUpdatingId(null);
+  };
 
   const filteredResources = useMemo(() => {
     if (filter === "all") return resources;
@@ -52,7 +72,7 @@ export default function FleetPage() {
       <Navbar onOpenReport={() => setIsReportOpen(true)} onRefresh={loadData} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Title */}
+        {/* Title Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
@@ -62,7 +82,7 @@ export default function FleetPage() {
               </h1>
             </div>
             <p className="text-xs text-neutral-500 font-medium mt-0.5">
-              Live status of ambulances, fire tenders, rescue teams, and hospital beds
+              Live status, bed capacities, and responder state simulation
             </p>
           </div>
 
@@ -78,6 +98,22 @@ export default function FleetPage() {
             </div>
           </div>
         </div>
+
+        {/* Replan Notification Banner */}
+        {replanNotice && (
+          <div className="bg-neutral-900 text-white p-4 rounded-3xl mb-6 text-xs flex items-center justify-between shadow-lg border border-neutral-800">
+            <div className="flex items-center gap-2">
+              <span className="text-base animate-pulse">⚡</span>
+              <span>{replanNotice}</span>
+            </div>
+            <Link
+              href="/dispatch"
+              className="px-3 py-1 rounded-full bg-white text-black font-bold text-[11px] shrink-0"
+            >
+              View Dispatch Plan →
+            </Link>
+          </div>
+        )}
 
         {/* Filter Chips */}
         <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
@@ -109,7 +145,7 @@ export default function FleetPage() {
                 : "bg-white text-neutral-600 hover:text-black border border-neutral-200"
             }`}
           >
-            🚒 Fire Units
+            🚒 Fire Tenders
           </button>
           <button
             onClick={() => setFilter("rescue_team")}
@@ -152,6 +188,9 @@ export default function FleetPage() {
             if (res.kind === "hospital") symbol = "🏥";
             if (res.kind === "shelter") symbol = "⛺";
 
+            const isMobileUnit = ["ambulance", "fire_unit", "rescue_team"].includes(res.kind);
+            const isBusy = updatingId === res.id;
+
             return (
               <div
                 key={res.id}
@@ -184,7 +223,7 @@ export default function FleetPage() {
                           : "bg-neutral-100 text-neutral-600 border-neutral-300"
                       }`}
                     >
-                      {res.status.replace("_", " ")}
+                      {res.status?.replace("_", " ")}
                     </span>
                   </div>
 
@@ -217,7 +256,7 @@ export default function FleetPage() {
                   )}
 
                   {/* Capabilities Tags */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-3">
                     {res.capabilities?.map((c, i) => (
                       <span
                         key={i}
@@ -227,12 +266,51 @@ export default function FleetPage() {
                       </span>
                     ))}
                   </div>
+
+                  {/* Step 2.4 Responder Simulator Buttons */}
+                  {isMobileUnit && (
+                    <div className="pt-2 border-t border-neutral-100 mt-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
+                        Simulate Responder Action:
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px] font-bold">
+                        <button
+                          onClick={() => handleResponderEvent(res.id, "arrived")}
+                          disabled={isBusy || res.status === "on_scene"}
+                          className="py-1.5 px-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 transition text-neutral-800 text-center"
+                        >
+                          Arrived
+                        </button>
+                        <button
+                          onClick={() => handleResponderEvent(res.id, "unavailable")}
+                          disabled={isBusy || res.status === "unavailable"}
+                          className="py-1.5 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 disabled:opacity-40 transition text-center"
+                        >
+                          Unavailable
+                        </button>
+                        <button
+                          onClick={() => handleResponderEvent(res.id, "available")}
+                          disabled={isBusy || res.status === "available"}
+                          className="py-1.5 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 disabled:opacity-40 transition text-center"
+                        >
+                          Available
+                        </button>
+                        <button
+                          onClick={() => handleResponderEvent(res.id, "cleared")}
+                          disabled={isBusy}
+                          className="py-1.5 px-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 transition text-neutral-800 text-center"
+                        >
+                          Cleared
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400">
                   <span>Coordinates: {res.location?.lat}, {res.location?.lng}</span>
                   <span className="font-semibold text-neutral-700 capitalize">
-                    {res.kind.replace("_", " ")}
+                    {res.kind?.replace("_", " ")}
                   </span>
                 </div>
               </div>

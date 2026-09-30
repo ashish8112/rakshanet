@@ -5,13 +5,16 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ReportModal from "@/components/ReportModal";
-import { getIncidents } from "@/components/api";
+import { getIncidents, updateIncident, generatePlan } from "@/components/api";
 import { SEVERITY_BADGES, STATUS_PILLS } from "@/components/IncidentQueue";
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [answers, setAnswers] = useState({});
+  const [submittingId, setSubmittingId] = useState(null);
+  const [actionNotice, setActionNotice] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   const loadData = () => {
@@ -32,6 +35,28 @@ export default function IncidentsPage() {
     };
   }, []);
 
+  const handleAnswerQuestion = async (incident) => {
+    const answer = answers[incident.id];
+    if (!answer || !answer.trim() || submittingId) return;
+
+    setSubmittingId(incident.id);
+    setActionNotice(null);
+
+    const updatedDescription = `${incident.description} | Caller clarification: ${answer.trim()}`;
+    const updateRes = await updateIncident(incident.id, {
+      description: updatedDescription,
+    });
+
+    if (updateRes.ok) {
+      setActionNotice(`Clarification saved for ${incident.code}. Re-evaluating plan with Gemini agents...`);
+      await generatePlan({ trigger: "manual", incidentId: incident.id });
+      setActionNotice(`✓ Plan re-evaluated for ${incident.code}. Ready in Dispatch center.`);
+      setAnswers((prev) => ({ ...prev, [incident.id]: "" }));
+      loadData();
+    }
+    setSubmittingId(null);
+  };
+
   const filteredIncidents = useMemo(() => {
     return incidents.filter((inc) => {
       if (filter === "critical" && inc.severity !== 5 && inc.severity !== 4) {
@@ -41,6 +66,9 @@ export default function IncidentsPage() {
         return false;
       }
       if (filter === "dispatched" && inc.status !== "dispatched") {
+        return false;
+      }
+      if (filter === "needs_info" && inc.status !== "needs_info") {
         return false;
       }
       if (search.trim()) {
@@ -71,7 +99,7 @@ export default function IncidentsPage() {
               </h1>
             </div>
             <p className="text-xs text-neutral-500 font-medium mt-0.5">
-              Live feed of reported calls and AI dispatch assessments across Bengaluru
+              Live feed of reported calls, triage assessments, and dispatcher follow-ups
             </p>
           </div>
 
@@ -95,6 +123,22 @@ export default function IncidentsPage() {
             </button>
           </div>
         </div>
+
+        {/* Action Notice Banner */}
+        {actionNotice && (
+          <div className="bg-neutral-900 text-white p-4 rounded-3xl mb-6 text-xs flex items-center justify-between shadow-lg border border-neutral-800">
+            <div className="flex items-center gap-2">
+              <span className="text-base animate-pulse">⚡</span>
+              <span>{actionNotice}</span>
+            </div>
+            <Link
+              href="/dispatch"
+              className="px-3 py-1 rounded-full bg-white text-black font-bold text-[11px] shrink-0"
+            >
+              Go to Dispatch →
+            </Link>
+          </div>
+        )}
 
         {/* Filter Chips */}
         <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
@@ -129,6 +173,16 @@ export default function IncidentsPage() {
             Dispatched
           </button>
           <button
+            onClick={() => setFilter("needs_info")}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+              filter === "needs_info"
+                ? "bg-amber-600 text-white shadow-sm"
+                : "bg-white text-neutral-600 hover:text-black border border-neutral-200"
+            }`}
+          >
+            Needs Info
+          </button>
+          <button
             onClick={() => setFilter("active")}
             className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
               filter === "active"
@@ -156,6 +210,9 @@ export default function IncidentsPage() {
               const statusClass =
                 STATUS_PILLS[inc.status] ||
                 "bg-neutral-100 text-neutral-600 border-neutral-200";
+
+              const hasQuestion = inc.status === "needs_info" && inc.followUpQuestions?.length > 0;
+              const isSubmittingThis = submittingId === inc.id;
 
               return (
                 <div
@@ -201,13 +258,33 @@ export default function IncidentsPage() {
                       {inc.description}
                     </p>
 
-                    {/* Follow-up question if needs_info */}
-                    {inc.status === "needs_info" && inc.followUpQuestions?.length > 0 && (
-                      <div className="mb-3 bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-900">
-                        <span className="font-bold block mb-1">
-                          ❓ Follow-up Question:
+                    {/* Follow-up question form if needs_info (CONTRACT.md & Ashish requirement) */}
+                    {hasQuestion && (
+                      <div className="mb-3 bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-950 space-y-2">
+                        <span className="font-bold block">
+                          ❓ AI Follow-up Question:
                         </span>
-                        {inc.followUpQuestions[0]}
+                        <p className="text-amber-900 italic text-[11px]">
+                          &quot;{inc.followUpQuestions[0]}&quot;
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={answers[inc.id] || ""}
+                            onChange={(e) =>
+                              setAnswers({ ...answers, [inc.id]: e.target.value })
+                            }
+                            placeholder="Type caller clarification..."
+                            className="flex-1 bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-black focus:outline-none focus:border-amber-400"
+                          />
+                          <button
+                            onClick={() => handleAnswerQuestion(inc)}
+                            disabled={!answers[inc.id]?.trim() || isSubmittingThis}
+                            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs disabled:opacity-40 transition"
+                          >
+                            {isSubmittingThis ? "Saving..." : "Submit & Replan"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -218,7 +295,7 @@ export default function IncidentsPage() {
                       <span
                         className={`px-2.5 py-0.5 rounded-full font-bold uppercase border text-[10px] ${statusClass}`}
                       >
-                        {inc.status.replace("_", " ")}
+                        {inc.status?.replace("_", " ")}
                       </span>
                       {inc.peopleAffected !== null && (
                         <span className="font-bold text-[#e11900] text-[11px]">

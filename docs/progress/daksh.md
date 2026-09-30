@@ -37,11 +37,11 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 2: Core loop (4:30 PM to 8:00 PM)
 
-- [ ] 2.1 Plan review panel: assignments with reason and ETA, uncovered, alternatives, Approve / Edit / Reject
-- [ ] 2.2 Agent activity timeline from `GET /api/logs`, with loading states
-- [ ] 2.3 Approve then dispatch flow (CONTRACT.md 5.2), lines on the map from unit to incident
-- [ ] 2.4 Responder simulator buttons: Arrived, Unavailable, Available, Cleared (`replanNeeded` -> `POST /api/plan/generate`)
-- [ ] 2.5 Turn `USE_MOCK` off everywhere
+- [x] 2.1 Plan review panel: assignments with reason and ETA, uncovered, alternatives, Approve / Edit / Reject
+- [x] 2.2 Agent activity timeline from `GET /api/logs`, with loading states
+- [x] 2.3 Approve then dispatch flow (CONTRACT.md 5.2), lines on the map from unit to incident
+- [x] 2.4 Responder simulator buttons: Arrived, Unavailable, Available, Cleared (`replanNeeded` -> `POST /api/plan/generate`)
+- [ ] 2.5 Turn `USE_MOCK` off everywhere (Waiting on team MongoDB Atlas connection)
 
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
@@ -50,9 +50,10 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 3: Replanning, edge cases, polish (8:00 PM to 1:00 AM)
 
-- [ ] 3.1 Before and after view for replanned plans ("what changed and why")
-- [ ] 3.2 Escalation banner, duplicate warning, follow-up questions form (answer -> `PATCH` -> regenerate)
+- [x] 3.1 Before and after view for replanned plans ("what changed and why")
+- [x] 3.2 Escalation banner, duplicate warning, follow-up questions form (answer -> `PATCH` -> regenerate)
 - [ ] 3.3 Polish and phone-screen check
+
 
 **Gate 3 (FEATURE FREEZE)**
 - [ ] Demo script runs 3 times in a row on the live link with no failure
