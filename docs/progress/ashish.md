@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 1
-**Next step:** 1.5 (live assessments for 3 reports and Phase 1 PR review/merge)
+**Next step:** Gate 1 (team check), then Phase 2 step 2.1 (Route and Logistics agent)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -30,13 +30,13 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 1.2 `lib/agents/stubTools.js`: all 7 contract-named fake tools with contract-shaped outputs and 24-hex ids
 - [x] 1.3 Incident Assessment agent + prompt: exact contract output validation; orchestrator writes an AgentLog for each successful assessment (controlled tests passed)
 - [x] 1.4 Orchestrator v1 + `POST /api/plan/generate`: proposed plan with empty assignments and response envelope (controlled tests and production build passed)
-- [ ] 1.5 Test with 3 sample incidents (clear, vague, very severe), all valid JSON, PR merged
+- [x] 1.5 Tested 3 incidents (clear flood sev 4 high, vague 'market' sev 1 low + follow-up questions, building collapse sev 5 high): all valid contract JSON, 2 runs each, ~1-2 s. Fixed on the way: Gemini helper retries on 'high demand'/429/503 and on wrong-shape output; assessment drops extra keys Gemini adds (e.g. `location`). Model: `gemini-3.5-flash-lite` (Flash models were overloaded).
 
 **Gate 1 (whole team)**
 - [ ] All Phase 1 PRs merged into `main`
 - [ ] Report form saves a real incident to MongoDB
 - [ ] Map shows the real seeded resources (not mock)
-- [ ] Assessment agent returns valid JSON for all 3 test incidents
+- [x] Assessment agent returns valid JSON for all 3 test incidents
 
 ## Phase 2: Core loop (4:30 PM to 8:00 PM)
 
