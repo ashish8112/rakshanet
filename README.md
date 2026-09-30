@@ -27,6 +27,9 @@ When several emergencies happen at once (a flood, a building collapse, a road ac
 - **Acts on its own, never alone.** A new emergency is planned automatically, and the co-pilot watches the city (hospitals filling up, crews that have not reported, clusters of similar calls, questions from the AI) — but nothing is sent until a human approves.
 - **Never goes dark.** If Gemini is busy or offline, a rule-based backup planner takes over and the plan is clearly marked "Backup plan".
 - **Recognisable vehicles and a live map.** Every vehicle has its registration number; sent vehicles move along their route with an arrival countdown (simulated; "Demo speed" makes time pass 10× faster).
+- **Works even when the AI does not.** A ✋ Manual mode lets the dispatcher do everything by hand (choose vehicles nearest-first, set severity and needs), with the same safety checks.
+- **Quick actions where you look.** Vehicles on each emergency card have Arrived / Job done; emergencies can be marked resolved or cancelled (reported by mistake); hospitals and shelters record admissions and discharges.
+- **Light and dark mode.**
 - **Full history and impact.** Every report, plan, approval and crew update is logged with who did it; the History page shows today's emergencies, people helped, call-to-dispatch time and average arrival time.
 
 ---

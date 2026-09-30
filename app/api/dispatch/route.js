@@ -42,7 +42,7 @@ function checkLatestAssignments(assignments, resources, incidents, destinations)
     if (!resource || resource.status !== "available" || resource.assignedIncident || !MOBILE_KINDS.has(resource.kind)) {
       conflicts.push({ resourceId, reason: "Resource is missing or no longer available" });
     }
-    if (!incident || ["dispatched", "resolved"].includes(incident.status)) {
+    if (!incident || ["dispatched", "resolved", "cancelled"].includes(incident.status)) {
       conflicts.push({ resourceId, reason: "Incident is missing or already dispatched or resolved" });
     } else if (resource && incident.requiredCapabilities.length > 0 &&
         !incident.requiredCapabilities.some((capability) => resource.capabilities.includes(capability))) {
@@ -121,7 +121,7 @@ export async function POST(request) {
       }
       for (const [incidentId, ids] of incidentResources) {
         const update = await Incident.updateOne(
-          { _id: incidentId, status: { $nin: ["dispatched", "resolved"] } },
+          { _id: incidentId, status: { $nin: ["dispatched", "resolved", "cancelled"] } },
           { $set: { status: "dispatched" }, $addToSet: { assignedResources: { $each: ids } } },
           { session }
         );

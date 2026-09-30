@@ -22,6 +22,9 @@ export function severityInfo(severity) {
   return { label: "Not assessed yet", tone: "gray", color: "#64748b" };
 }
 
+// Resolved or cancelled: nothing more to do.
+export const isClosed = (status) => status === "resolved" || status === "cancelled";
+
 // Incident status, as the dispatcher would say it.
 export function incidentStatusInfo(status) {
   switch (status) {
@@ -36,6 +39,8 @@ export function incidentStatusInfo(status) {
       return { label: "Help on the way", tone: "green" };
     case "resolved":
       return { label: "Resolved", tone: "muted" };
+    case "cancelled":
+      return { label: "Cancelled (reported by mistake)", tone: "muted" };
     default:
       return { label: status ?? "", tone: "gray" };
   }

@@ -190,3 +190,13 @@ Endpoints:
 | `GET /api/geocode?q=` | none | `[{ name, area, label, lat, lng, matched }]` Bengaluru places (OpenStreetMap), shorter queries tried if nothing matches |
 
 Pages: `/` control room (emergencies, map, AI plan), `/fleet` (units, crew updates, add/remove), `/history` (impact numbers + activity log), `/login`.
+
+### 5.7 More additions (Ashish, 1 Oct)
+
+- `Incident.status` also `"cancelled"` (reported by mistake; kept for the record). Closed = resolved or cancelled.
+- `PATCH /api/incidents/:id` also accepts `severity` (1-5, sets confidence high) and `requiredCapabilities` (subset of medical/fire/rescue/beds/shelter) — manual mode.
+- `POST /api/incidents/:id/close { outcome: "resolved" | "cancelled", note? }` → Incident; frees every vehicle on it (out-of-service ones stay out of service).
+- `POST /api/plan/manual { incidentId, resourceIds[], destinationId?, note? }` → Plan (`status: approved`, `source: "manual"`); the screen then calls `POST /api/dispatch`. Same safety check (`validateAssignments`).
+- `PATCH /api/resources/:id { admitted?, discharged?, total? }` → hospital/shelter with new `capacity`; used stays within 0..total.
+- Activity types added: `manual_plan`, `capacity_changed`, `incident_cancelled`.
+- UI: ✨ AI / ✋ Manual switch (localStorage `rn-mode`), dark mode (`rn-theme`), demo speed (`rn-demo-speed`).

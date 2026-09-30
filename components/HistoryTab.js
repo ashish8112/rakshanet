@@ -100,7 +100,7 @@ export default function HistoryTab({ refreshKey, incidents, resources }) {
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500">
           <option value="">All emergencies</option>
           {sortedIncidents.map((i) => (
-            <option key={i.id} value={i.id}>{typeLabel(i.type)} in {i.location.area} ({i.code}){i.status === "resolved" ? " · resolved" : ""}</option>
+            <option key={i.id} value={i.id}>{typeLabel(i.type)} in {i.location.area} ({i.code}){["resolved", "cancelled"].includes(i.status) ? ` · ${i.status}` : ""}</option>
           ))}
         </select>
         <select value={kind} onChange={(e) => setKind(e.target.value)}

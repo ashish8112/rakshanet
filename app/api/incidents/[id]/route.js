@@ -30,7 +30,7 @@ export async function GET(_request, { params }) {
   }
 }
 
-const INCIDENT_STATUSES = new Set(["new", "assessing", "needs_info", "planned", "dispatched", "resolved"]);
+const INCIDENT_STATUSES = new Set(["new", "assessing", "needs_info", "planned", "dispatched", "resolved", "cancelled"]);
 const PATCH_FIELDS = new Set(["description", "peopleAffected", "location", "status", "severity", "requiredCapabilities"]);
 const CAPABILITIES = new Set(["medical", "fire", "rescue", "beds", "shelter"]);
 

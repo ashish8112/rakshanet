@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { dispatchPlan, manualPlan, updateIncident } from "@/components/api";
 import { distanceKm, etaMinutes } from "@/components/geo";
-import { UNIT_KINDS, isMobileUnit, severityInfo, typeIcon, typeLabel, unitIcon, unitSubtitle, unitTitle } from "@/components/labels";
+import { UNIT_KINDS, isClosed, isMobileUnit, severityInfo, typeIcon, typeLabel, unitIcon, unitSubtitle, unitTitle } from "@/components/labels";
 import { Button, EmptyState, ErrorNote, Pill } from "@/components/ui";
 
 const SEVERITIES = [[5, "Critical"], [4, "Serious"], [3, "Moderate"], [1, "Minor"]];
@@ -64,7 +64,7 @@ function IncidentSettings({ incident, onSaved }) {
 }
 
 export default function ManualTab({ incidents, resources, selectedId, onSelect, onChanged }) {
-  const open = incidents.filter((i) => !["resolved"].includes(i.status)).sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
+  const open = incidents.filter((i) => !isClosed(i.status)).sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
   const incident = open.find((i) => i.id === selectedId) ?? null;
   const [picked, setPicked] = useState(() => new Set());
   const [destinationId, setDestinationId] = useState(null);

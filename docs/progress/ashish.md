@@ -32,7 +32,12 @@ DONE on branch `ops-improvements` (1 Oct, tested end to end on the test DB: 24/2
 - F. Impact strip on History (`components/ImpactStrip.js`).
 - I. History log (`activities` collection, `lib/activity.js`, `GET /api/activity`, History page with filters and "Show the AI's steps"); Fleet page grouped (on a job by emergency, free/out of service by type, hospitals & shelters), per-button spinners, instant updates; vehicle plates (`vehicleNumber`, seed script); add unit / remove unit.
 - CONTRACT.md 5.6 and README updated.
-NEXT: merge `ops-improvements` into `main` (deploys), then reset the LIVE data once (needed for plates + FIR-03 out of service) — ask Ashish first, it wipes live data.
+DONE (1 Oct, merged into main): ops-improvements; LIVE data reset done. Then on branches manual-mode → dark-mode (merged together):
+- Manual mode (✋): dispatcher plans without AI (`/api/plan/manual`, severity/needs by hand). 14/14 browser checks.
+- Dark mode: theme switch in header and login. Screens checked.
+- Hospital/shelter beds: admitted / discharged / edit total (`PATCH /api/resources/:id`).
+- Card actions on the home page: Arrived / Job done per vehicle, Mark resolved, Cancel report (`POST /api/incidents/:id/close`, status `cancelled`). 13/13 browser checks.
+FULL PROJECT KNOWLEDGE FOR A NEW CHAT: `docs/HANDOFF.md`.
 
 AFTER THAT: tutorial video with the brag skill (full brag, any length) → save to `public/tutorial.mp4` and add a "▶ Watch video" button next to "How it works" in the header. Plan already written in `brag-output/brag-plan.md` (git-ignored), recorder script `brag-output/work/record.mjs` (records the real app via Chrome DevTools; will need updating after the UI changes). Hyperframes CLI is used via `npx -y hyperframes@0.8.97` (set `HYPERFRAMES_SKIP_SKILLS=1`).
 

@@ -114,7 +114,7 @@ function ControlRoom() {
       }}
     />
   ) : (
-    <EmergencyList incidents={incidents} resources={resources} selectedId={selectedId} onSelect={setSelectedId}
+    <EmergencyList incidents={incidents} resources={resources} selectedId={selectedId} onSelect={setSelectedId} onChanged={load}
       onNew={() => { setCreating(true); setPickedLocation(null); setPhoneView("list"); }}
       onAnswered={(incident) => (mode === "manual" ? load() : askAI({ trigger: "manual", incidentId: incident.id }))} />
   );

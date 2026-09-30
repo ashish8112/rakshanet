@@ -27,7 +27,9 @@ export const whoAmI = () => request("/api/auth/me");
 // Emergencies
 export const getIncidents = () => request("/api/incidents");
 export const createIncident = (incident) => request("/api/incidents", { method: "POST", body: incident });
-export const updateIncident = (id, changes) => request(`/api/incidents/${id}`, { method: "PATCH", body: changes });
+// outcome: "resolved" (job done) or "cancelled" (reported by mistake); frees its vehicles
+export const closeIncident = (id, outcome, note = "") => request(`/api/incidents/${id}/close`, { method: "POST", body: { outcome, note } });
+export const updateIncident =(id, changes) => request(`/api/incidents/${id}`, { method: "PATCH", body: changes });
 
 // What the caller said -> the New emergency form (type, description, place, people)
 export const readCall = (text) => request("/api/intake", { method: "POST", body: { text } });

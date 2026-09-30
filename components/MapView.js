@@ -135,7 +135,7 @@ export default function MapView({ incidents, resources, selectedId, onSelectInci
           );
         })}
 
-        {incidents.map((incident) => (
+        {incidents.filter((incident) => incident.status !== "cancelled").map((incident) => (
           <Marker key={incident.id} position={[incident.location.lat, incident.location.lng]}
             icon={incidentMarker(incident, incident.id === selectedId)} zIndexOffset={1000}
             eventHandlers={{ click: () => onSelectIncident?.(incident.id) }}>

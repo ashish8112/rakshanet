@@ -20,7 +20,7 @@ export default function ImpactStrip({ incidents, refreshKey }) {
     return () => { ignore = true; };
   }, [refreshKey]);
 
-  const today = incidents.filter((i) => isToday(i.reportedAt));
+  const today = incidents.filter((i) => isToday(i.reportedAt) && i.status !== "cancelled");
   const resolved = today.filter((i) => i.status === "resolved").length;
   const helped = today.filter((i) => ["dispatched", "resolved"].includes(i.status)).reduce((sum, i) => sum + (i.peopleAffected ?? 0), 0);
 

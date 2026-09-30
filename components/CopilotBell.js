@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { distanceKm } from "@/components/geo";
-import { UNIT_KINDS, isMobileUnit, typeLabel, unitTitle } from "@/components/labels";
+import { UNIT_KINDS, isClosed, isMobileUnit, typeLabel, unitTitle } from "@/components/labels";
 
 const SILENT_MINUTES = 20; // a crew on its way this long without a word gets a check-in reminder
 const CLUSTER_KM = 3;
@@ -13,7 +13,7 @@ const CLUSTER_MINUTES = 60;
 
 export function copilotAlerts({ incidents, resources, plan }, now = Date.now()) {
   const alerts = [];
-  const open = incidents.filter((i) => i.status !== "resolved");
+  const open = incidents.filter((i) => !isClosed(i.status));
   const incidentsById = new Map(incidents.map((i) => [i.id, i]));
 
   for (const incident of open.filter((i) => i.status === "needs_info")) {
