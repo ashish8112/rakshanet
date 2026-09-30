@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 1
-**Next step:** Gate 1 (team check), then Phase 2 step 2.1 (Route and Logistics agent)
+**Current phase:** 2
+**Next step:** 2.6 (plan versioning routes: approve, reject, edit, current, history, GET /api/logs)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -40,11 +40,11 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 2: Core loop (4:30 PM to 8:00 PM)
 
-- [ ] 2.1 Route and Logistics agent
-- [ ] 2.2 Resource Allocation agent
-- [ ] 2.3 Command and Planning agent
-- [ ] 2.4 Full orchestrator chain with loop guard (max 2 "investigate" rounds)
-- [ ] 2.5 Switch to real tools (one import change) after Sam's 2.1 is merged
+- [x] 2.1 Route and Logistics agent (`lib/agents/routeLogistics.js`): tool-only, no Gemini. Nearest 3 free units per needed capability + nearest hospitals/shelters with space
+- [x] 2.2 Resource Allocation agent (`lib/agents/resourceAllocation.js`): Gemini picks units from candidates only, one unit per incident, severity first; distance/ETA copied from tools; missing incidents auto-added to `uncovered`
+- [x] 2.3 Command and Planning agent (`lib/agents/commandPlanning.js`): plain-language summary, alternatives with trade-offs, `changes` vs previous plan, or `investigate`
+- [x] 2.4 Orchestrator chain (`lib/orchestrator/generatePlan.js`): assess (only unassessed / triggering incident) -> route -> allocate -> command; max 2 investigate rounds; too-vague incidents go straight to `needs_info`; older proposed plans -> `superseded`. Tested end to end on a separate test DB (`rakshanet_test`): 3 incidents -> 6-7 assignments in ~8 s; vague report -> needs_info + question; answered via PATCH -> reassessed sev 5, 3 units, `changes` listed
+- [x] 2.5 Real tools used from the start (Sam's `lib/tools` was already on `main`); `stubTools.js` no longer imported
 - [ ] 2.6 Plan versioning + routes: approve, reject, edit, current, history, `GET /api/logs`
 
 **Gate 2 (CORE FREEZE)**
@@ -78,6 +78,10 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
+
+- `POST /api/plan/generate` now accepts `incidentId: null` (Daksh's api.js sends null). Gemini failures return code `AGENT_ERROR` (502).
+- `expectedDelayMinutes` in `uncovered` is null for now; estimate comes in 3.3.
+- Test safely with a separate DB: run `next dev` with `MONGODB_URI` pointing at `/rakshanet_test` (never seed the shared `rakshanet` DB while others test).
 
 - All branches (backend-data, backend-agents, frontend) merged into `main` and deployed. Kept main's package-lock.json (branch version only had npm metadata changes).
 
