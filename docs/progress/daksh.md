@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 0
-**Next step:** Gate 0
+**Current phase:** 1
+**Next step:** Gate 1
 **Branch:** frontend
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -23,11 +23,11 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 1: Foundations (2:00 PM to 4:30 PM)
 
-- [ ] 1.1 `mock/` files copied from the contract examples + `components/api.js` with all fetch calls and a `USE_MOCK` switch
-- [ ] 1.2 Layout from the paper sketch (top bar, left incident queue, centre map, right panel)
-- [ ] 1.3 Map with resource and incident markers (colour by severity and status)
-- [ ] 1.4 Report form: click the map to set location, then type, description, people affected
-- [ ] 1.5 Incident queue sorted by severity with status badges; all on mock data, PR merged
+- [x] 1.1 `mock/` files copied from the contract examples + `components/api.js` with all fetch calls and a `USE_MOCK` switch
+- [x] 1.2 Layout from the paper sketch (top bar, left incident queue, centre map, right panel)
+- [x] 1.3 Map with resource and incident markers (colour by severity and status)
+- [x] 1.4 Report form: click the map to set location, then type, description, people affected
+- [x] 1.5 Incident queue sorted by severity with status badges; all on mock data, PR merged
 
 **Gate 1 (whole team)**
 - [ ] All Phase 1 PRs merged into `main`

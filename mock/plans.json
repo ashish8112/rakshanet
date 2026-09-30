@@ -1,0 +1,85 @@
+[
+  {
+    "id": "66f200000000000000000001",
+    "version": 1,
+    "status": "committed",
+    "trigger": "new_incident",
+    "summary": "Building collapse in Indiranagar takes highest priority. Dispatched AMB-01, FIR-02, and RES-01 with Manipal Hospital as destination.",
+    "assignments": [
+      {
+        "incidentId": "66f000000000000000000001",
+        "resourceId": "66f100000000000000000001",
+        "destinationId": "66f100000000000000000010",
+        "distanceKm": 4.1,
+        "etaMinutes": 8,
+        "reason": "Nearest free ambulance with medical capability, routing injured to Manipal Hospital"
+      },
+      {
+        "incidentId": "66f000000000000000000001",
+        "resourceId": "66f100000000000000000006",
+        "destinationId": null,
+        "distanceKm": 1.2,
+        "etaMinutes": 3,
+        "reason": "Immediate structural containment and heavy hydraulic cutting gear"
+      },
+      {
+        "incidentId": "66f000000000000000000001",
+        "resourceId": "66f100000000000000000008",
+        "destinationId": null,
+        "distanceKm": 2.5,
+        "etaMinutes": 6,
+        "reason": "Specialized rubble extraction and search unit"
+      }
+    ],
+    "uncovered": [],
+    "alternatives": [
+      {
+        "summary": "Dispatch AMB-02 instead of AMB-01",
+        "tradeoff": "AMB-02 is 1.5 km further away, adding 4 minutes ETA"
+      }
+    ],
+    "changes": [],
+    "dispatcherNote": "Approved on priority call.",
+    "createdAt": "2026-09-30T14:10:00.000Z",
+    "decidedAt": "2026-09-30T14:11:30.000Z"
+  },
+  {
+    "id": "66f200000000000000000002",
+    "version": 2,
+    "status": "proposed",
+    "trigger": "new_incident",
+    "summary": "Flood in Koramangala 4th Block requires rescue boats and ambulance reserve. AMB-03 assigned. Rescue team capability deficit detected.",
+    "assignments": [
+      {
+        "incidentId": "66f000000000000000000002",
+        "resourceId": "66f100000000000000000003",
+        "destinationId": "66f100000000000000000011",
+        "distanceKm": 3.2,
+        "etaMinutes": 7,
+        "reason": "Nearest free ambulance with medical capability, routing to St. John's Hospital"
+      }
+    ],
+    "uncovered": [
+      {
+        "incidentId": "66f000000000000000000002",
+        "reason": "No free rescue team nearby; SDRF Unit Alpha committed to Indiranagar",
+        "expectedDelayMinutes": 20
+      }
+    ],
+    "alternatives": [
+      {
+        "summary": "Divert RES-01 from Indiranagar collapse",
+        "tradeoff": "Indiranagar is severity 5; diverting compromises life-saving extraction"
+      }
+    ],
+    "changes": [
+      {
+        "what": "Added Koramangala flood response plan",
+        "why": "New severity 4 incident reported"
+      }
+    ],
+    "dispatcherNote": "",
+    "createdAt": "2026-09-30T14:15:00.000Z",
+    "decidedAt": null
+  }
+]
