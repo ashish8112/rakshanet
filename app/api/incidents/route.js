@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { connectDB, Incident } from "@/lib/db";
 import { detectDuplicates } from "@/lib/tools";
+import { actorFrom, incidentName, logActivity } from "@/lib/activity";
 
 const INCIDENT_TYPES = new Set(["flood", "fire", "collapse", "accident", "medical", "other"]);
 
@@ -70,6 +71,12 @@ export async function POST(request) {
     const duplicates = await detectDuplicates(incident);
     incident.possibleDuplicateOf = duplicates[0]?.incidentId ?? null;
     await incident.save();
+    await logActivity({
+      type: "incident_reported",
+      actor: await actorFrom(request),
+      incidentIds: [incident.id],
+      message: `${incidentName(incident)} reported${incident.peopleAffected != null ? `, ${incident.peopleAffected} people affected` : ""}: "${incident.description}"${duplicates.length ? " (possible duplicate of a nearby report)" : ""}`,
+    });
     return NextResponse.json({ ok: true, data: { ...incident.toJSON(), duplicates } }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError") {

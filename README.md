@@ -20,7 +20,14 @@ When several emergencies happen at once (a flood, a building collapse, a road ac
 5. **Adapt**: when a crew reports "vehicle broke down" or "job done", the system replans only what changed and explains why.
 6. **Escalate**: when there are not enough units, the plan says who is short of what and how long they will wait.
 
-Every agent step appears live in the **agent timeline**, so the dispatcher sees how the AI reached its plan.
+**What makes it different**
+
+- **Glass-box agents, live.** While the AI plans, every assistant's step and every tool call ("find nearest free units with medical → AMB-03 1.2 km…") streams onto the screen as it happens.
+- **Speak the call in any language.** The dispatcher dictates or pastes the caller's words in English, Hindi or Kannada; the AI fills in the form (type, place, people) and lists what to still ask. The place is searched on the map for the dispatcher to confirm.
+- **Acts on its own, never alone.** A new emergency is planned automatically, and the co-pilot watches the city (hospitals filling up, crews that have not reported, clusters of similar calls, questions from the AI) — but nothing is sent until a human approves.
+- **Never goes dark.** If Gemini is busy or offline, a rule-based backup planner takes over and the plan is clearly marked "Backup plan".
+- **Recognisable vehicles and a live map.** Every vehicle has its registration number; sent vehicles move along their route with an arrival countdown (simulated; "Demo speed" makes time pass 10× faster).
+- **Full history and impact.** Every report, plan, approval and crew update is logged with who did it; the History page shows today's emergencies, people helped, call-to-dispatch time and average arrival time.
 
 ---
 
@@ -68,7 +75,7 @@ Every agent step appears live in the **agent timeline**, so the dispatcher sees 
 ## Project structure
 
 ```
-app/                  the control room page, the login page, and API routes
+app/                  pages: control room (/), fleet, history, login; and the API routes
 proxy.js              sign-in guard for every page and API
 app/api/plan/         plan generate, current, history, approve, reject, edit
 app/api/logs/         agent timeline

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { connectDB, Incident, Plan, Resource } from "@/lib/db";
 import { validateAssignments } from "@/lib/tools";
+import { actorFrom, logActivity, unitName } from "@/lib/activity";
 
 const MOBILE_KINDS = new Set(["ambulance", "fire_unit", "rescue_team"]);
 const DESTINATION_KINDS = new Set(["hospital", "shelter"]);
@@ -164,9 +165,20 @@ export async function POST(request) {
       }
       committedPlan = await Plan.findById(body.planId).session(session);
     });
+    const sentUnits = await Resource.find({ _id: { $in: committedPlan.assignments.map((a) => a.resourceId) } });
+    await logActivity({
+      type: "units_sent",
+      actor: await actorFrom(request),
+      planVersion: committedPlan.version,
+      incidentIds: [...new Set(committedPlan.assignments.map((a) => String(a.incidentId)))],
+      message: `Plan ${committedPlan.version} sent: ${sentUnits.map(unitName).join(", ")} on their way`,
+    });
     return NextResponse.json({ ok: true, data: { committed: true, plan: committedPlan } });
   } catch (error) {
-    if (error instanceof DispatchConflict) return conflictResponse(error.conflicts);
+    if (error instanceof DispatchConflict) {
+      await logActivity({ type: "dispatch_conflict", actor: await actorFrom(request), message: `Sending was stopped: ${error.conflicts.map((c) => c.reason).join("; ")}. A fresh plan is needed.` });
+      return conflictResponse(error.conflicts);
+    }
     return errorResponse("DISPATCH_ERROR", "Could not dispatch the plan; check the database connection and transaction support.", 500);
   }
 }

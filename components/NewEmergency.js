@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createIncident, searchPlaces } from "@/components/api";
+import { createIncident, readCall, searchPlaces } from "@/components/api";
 import { BENGALURU_HUBS, distanceKm } from "@/components/geo";
 import { INCIDENT_TYPES } from "@/components/labels";
 import { Button, ErrorNote } from "@/components/ui";
@@ -14,8 +14,8 @@ export function areaFor(location) {
 }
 
 // Type a landmark, street or area. Known areas match instantly; OpenStreetMap results follow after a short pause.
-function PlaceSearch({ onPick }) {
-  const [query, setQuery] = useState("");
+export function PlaceSearch({ onPick, placeholder = "Type a place, e.g. Kristu Jayanti University", autoFocus = true, initialQuery = "" }) {
+  const [query, setQuery] = useState(initialQuery);
   const [online, setOnline] = useState({ query: "", places: [], error: "" });
   const [searching, setSearching] = useState(false);
   const q = query.trim();
@@ -45,8 +45,8 @@ function PlaceSearch({ onPick }) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-          placeholder="Type a place, e.g. Kristu Jayanti University"
+          autoFocus={autoFocus}
+          placeholder={placeholder}
           className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-10 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
         {searching && <span className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />}
@@ -73,8 +73,82 @@ function PlaceSearch({ onPick }) {
   );
 }
 
+// Speech languages offered for dictation (browser speech recognition, no extra service).
+const SPEECH_LANGS = [["en-IN", "English"], ["hi-IN", "हिन्दी"], ["kn-IN", "ಕನ್ನಡ"]];
+
+// "Quick fill": speak or paste what the caller says, and the AI fills in the form.
+function QuickFill({ onFilled }) {
+  const [text, setText] = useState("");
+  const [lang, setLang] = useState("en-IN");
+  const [listening, setListening] = useState(null); // the running SpeechRecognition, if any
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const canListen = typeof window !== "undefined" && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const toggleMic = () => {
+    if (listening) {
+      listening.stop();
+      return;
+    }
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new Recognition();
+    rec.lang = lang;
+    rec.continuous = true;
+    rec.interimResults = true;
+    const before = text ? `${text} ` : "";
+    rec.onresult = (event) => {
+      let heard = "";
+      for (let i = 0; i < event.results.length; i += 1) heard += event.results[i][0].transcript;
+      setText(before + heard);
+    };
+    rec.onerror = (event) => setError(event.error === "not-allowed" ? "Allow the microphone in your browser to dictate." : "Could not hear clearly. Try again or type it.");
+    rec.onend = () => setListening(null);
+    setError("");
+    rec.start();
+    setListening(rec);
+  };
+
+  const fill = async () => {
+    listening?.stop();
+    setBusy(true);
+    setError("");
+    const res = await readCall(text);
+    setBusy(false);
+    if (!res.ok) return setError(res.error?.message ?? "Could not read the call.");
+    onFilled(res.data);
+  };
+
+  return (
+    <section className="rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4 ring-1 ring-inset ring-blue-200">
+      <p className="text-sm font-semibold text-blue-950">⚡ Quick fill with AI</p>
+      <p className="mb-2.5 text-xs text-blue-900/80">Speak or paste what the caller says — English, Hindi or Kannada. The AI fills in the form; you check it.</p>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
+        placeholder="e.g. Kristu Jayanti college hostel mein aag lagi hai, 40 students bahar aa rahe hain"
+        className="w-full resize-none rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {canListen && (
+          <>
+            <select value={lang} onChange={(e) => setLang(e.target.value)} disabled={Boolean(listening)}
+              className="rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm outline-none">
+              {SPEECH_LANGS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+            </select>
+            <Button type="button" size="sm" variant={listening ? "danger" : "secondary"} onClick={toggleMic}>
+              {listening ? "■ Stop" : "🎙️ Speak"}
+            </Button>
+          </>
+        )}
+        <Button type="button" size="sm" className="ml-auto" onClick={fill} loading={busy} disabled={text.trim().length < 5}>✨ Fill the form</Button>
+      </div>
+      {listening && <p className="mt-2 flex items-center gap-2 text-xs text-red-700"><span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> Listening… speak now</p>}
+      <ErrorNote message={error} />
+    </section>
+  );
+}
+
 export default function NewEmergency({ location, onChooseOnMap, onChooseArea, onClose, onCreated }) {
   const [type, setType] = useState("");
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [aiNote, setAiNote] = useState(null); // what Quick fill understood, shown for checking
   const [description, setDescription] = useState("");
   const [people, setPeople] = useState("");
   const [busy, setBusy] = useState(false);
@@ -108,6 +182,20 @@ export default function NewEmergency({ location, onChooseOnMap, onChooseArea, on
       </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+        <QuickFill onFilled={(result) => {
+          setType(result.type);
+          setDescription(result.description);
+          if (result.peopleAffected != null) setPeople(String(result.peopleAffected));
+          if (result.placeQuery) { setPlaceQuery(result.placeQuery); onChooseArea(null); }
+          setAiNote(result);
+        }} />
+        {aiNote && (
+          <div className="rounded-xl bg-white p-3 text-xs text-slate-600 ring-1 ring-slate-200">
+            <p className="font-medium text-slate-800">✓ Filled in by {aiNote.source === "ai" ? `the AI (from ${aiNote.language})` : "keyword rules (AI busy)"} — please check below.</p>
+            {aiNote.placeQuery && <p className="mt-0.5">Place heard: “{aiNote.placeQuery}” — pick the right match.</p>}
+            {aiNote.missing?.length > 0 && <p className="mt-0.5">Also ask the caller: {aiNote.missing.join(" · ")}</p>}
+          </div>
+        )}
         <section>
           <p className="mb-2 text-sm font-semibold text-slate-800">1. Where is it?</p>
           {location ? (
@@ -117,7 +205,7 @@ export default function NewEmergency({ location, onChooseOnMap, onChooseArea, on
             </div>
           ) : (
             <>
-              <PlaceSearch onPick={onChooseArea} />
+              <PlaceSearch key={placeQuery} initialQuery={placeQuery} onPick={onChooseArea} />
               <button type="button" onClick={onChooseOnMap} className="mt-2 text-sm font-medium text-blue-700 underline underline-offset-2">
                 or click the place on the map
               </button>

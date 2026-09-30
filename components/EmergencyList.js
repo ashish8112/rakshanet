@@ -1,9 +1,10 @@
 // Left column: every emergency as a plain card. Cards that need the dispatcher's answer come first.
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateIncident } from "@/components/api";
-import { severityInfo, incidentStatusInfo, typeIcon, typeLabel, timeAgo } from "@/components/labels";
+import { severityInfo, incidentStatusInfo, typeIcon, typeLabel, timeAgo, unitIcon, unitTitle } from "@/components/labels";
+import { arrivalText, trip, useDemoSpeed } from "@/components/movement";
 import { Button, EmptyState, ErrorNote, Pill } from "@/components/ui";
 
 function AnswerBox({ incident, onAnswered }) {
@@ -41,7 +42,7 @@ function AnswerBox({ incident, onAnswered }) {
   );
 }
 
-function EmergencyCard({ incident, incidents, selected, onSelect, onAnswered }) {
+function EmergencyCard({ incident, incidents, units, now, speed, selected, onSelect, onAnswered }) {
   const severity = severityInfo(incident.severity);
   const status = incidentStatusInfo(incident.status);
   const duplicateOf = incident.possibleDuplicateOf && incidents.find((i) => i.id === incident.possibleDuplicateOf);
@@ -76,6 +77,16 @@ function EmergencyCard({ incident, incidents, selected, onSelect, onAnswered }) 
         <span>{incident.code}</span>
         {incident.peopleAffected != null && <span>👥 {incident.peopleAffected} people</span>}
       </div>
+      {units.length > 0 && incident.status !== "resolved" && (
+        <ul className="mt-2.5 space-y-1 rounded-xl bg-slate-50 p-2.5 ring-1 ring-inset ring-slate-200">
+          {units.map((unit) => (
+            <li key={unit.id} className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-mono font-semibold tracking-wide text-slate-800">{unitIcon(unit.kind)} {unitTitle(unit)}</span>
+              <span className="text-slate-500">{arrivalText(trip(unit, incident, now, speed))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {duplicateOf && (
         <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-inset ring-slate-200">
           ⚠️ May be the same event as {typeLabel(duplicateOf.type).toLowerCase()} in {duplicateOf.location.area} ({duplicateOf.code}), reported nearby at the same time.
@@ -86,7 +97,14 @@ function EmergencyCard({ incident, incidents, selected, onSelect, onAnswered }) 
   );
 }
 
-export default function EmergencyList({ incidents, selectedId, onSelect, onNew, onAnswered }) {
+export default function EmergencyList({ incidents, resources = [], selectedId, onSelect, onNew, onAnswered }) {
+  const speed = useDemoSpeed();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+  const unitsById = new Map(resources.map((r) => [r.id, r]));
   const [showResolved, setShowResolved] = useState(false);
   // Newest report always on top.
   const newestFirst = (a, b) => new Date(b.reportedAt) - new Date(a.reportedAt);
@@ -116,7 +134,9 @@ export default function EmergencyList({ incidents, selectedId, onSelect, onNew, 
           </EmptyState>
         ) : (
           shown.map((incident) => (
-            <EmergencyCard key={incident.id} incident={incident} incidents={incidents} selected={incident.id === selectedId} onSelect={onSelect} onAnswered={onAnswered} />
+            <EmergencyCard key={incident.id} incident={incident} incidents={incidents} now={now} speed={speed}
+              units={(incident.assignedResources ?? []).map((id) => unitsById.get(id)).filter(Boolean)}
+              selected={incident.id === selectedId} onSelect={onSelect} onAnswered={onAnswered} />
           ))
         )}
       </div>

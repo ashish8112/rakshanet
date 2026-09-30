@@ -1,6 +1,7 @@
 // Owner: Sam
 import { NextResponse } from "next/server";
 import { connectDB, Incident } from "@/lib/db";
+import { actorFrom, incidentName, logActivity } from "@/lib/activity";
 
 export async function GET(_request, { params }) {
   const { id } = await params;
@@ -79,6 +80,13 @@ export async function PATCH(request, { params }) {
     if ("location" in body) incident.location = { lat: body.location.lat, lng: body.location.lng, area: body.location.area.trim() };
     if ("status" in body) incident.status = body.status;
     await incident.save();
+    const changed = [
+      "description" in body && `description now: "${incident.description}"`,
+      "peopleAffected" in body && `people affected: ${incident.peopleAffected ?? "unknown"}`,
+      "location" in body && `location: ${incident.location.area}`,
+      "status" in body && `status: ${incident.status}`,
+    ].filter(Boolean).join("; ");
+    await logActivity({ type: "incident_updated", actor: await actorFrom(request), incidentIds: [incident.id], message: `${incidentName(incident)} updated (${changed})` });
     return NextResponse.json({ ok: true, data: incident });
   } catch (error) {
     if (error?.name === "ValidationError") {

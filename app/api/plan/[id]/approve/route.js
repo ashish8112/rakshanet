@@ -3,6 +3,7 @@
 // The frontend calls POST /api/dispatch next (Sam) to actually send the units.
 import { approvePlan } from "@/lib/orchestrator/planActions";
 import { ok, fail, readBody, badJson } from "@/lib/orchestrator/respond";
+import { actorFrom } from "@/lib/activity";
 
 export async function POST(request, { params }) {
   const { id } = await params;
@@ -13,7 +14,7 @@ export async function POST(request, { params }) {
     return badJson();
   }
   try {
-    return ok(await approvePlan(id, body.note));
+    return ok(await approvePlan(id, body.note, await actorFrom(request)));
   } catch (error) {
     return fail(error, "Could not approve the plan; check the database connection.");
   }

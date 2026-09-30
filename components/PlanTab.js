@@ -1,42 +1,56 @@
 // Right panel, "AI Plan" tab: ask the AI, read its plan in plain words, approve & send or reject.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { approvePlan, dispatchPlan, rejectPlan } from "@/components/api";
-import { AGENT_INFO, typeIcon, typeLabel, unitIcon, unitLabel } from "@/components/labels";
+import { AGENT_INFO, typeIcon, typeLabel, unitIcon, unitSubtitle, unitTitle, withPlates } from "@/components/labels";
 import { Button, EmptyState, ErrorNote, Pill } from "@/components/ui";
 
 const THINKING_STEPS = ["incident_assessment", "route_logistics", "resource_allocation", "command_planning"];
 
-function Thinking() {
-  const [step, setStep] = useState(0);
+// Live view while the AI works: which assistant is busy, and every real step and tool call as it happens.
+function Thinking({ steps, resources }) {
+  const feed = useRef(null);
+  const reached = steps.reduce((max, s) => Math.max(max, THINKING_STEPS.indexOf(s.agent)), 0);
+  const backup = steps.some((s) => /backup rules/i.test(s.message));
   useEffect(() => {
-    const timer = setInterval(() => setStep((s) => Math.min(s + 1, THINKING_STEPS.length - 1)), 2200);
-    return () => clearInterval(timer);
-  }, []);
+    feed.current?.scrollTo({ top: feed.current.scrollHeight, behavior: "smooth" });
+  }, [steps.length]);
   return (
-    <div className="p-5">
-      <p className="text-lg font-semibold text-slate-900">The AI is making a plan…</p>
-      <p className="mt-1 text-sm text-slate-500">Usually 5–15 seconds. Four assistants work one after another:</p>
-      <ol className="mt-5 space-y-3">
+    <div className="flex h-full flex-col p-5">
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" /></span>
+        <p className="text-lg font-semibold text-slate-900">The AI is planning — live</p>
+      </div>
+      <p className="mt-1 text-sm text-slate-500">Four assistants work one after another. Every step below is real.</p>
+      <ol className="mt-4 grid grid-cols-2 gap-2">
         {THINKING_STEPS.map((agent, index) => {
-          const state = index < step ? "done" : index === step ? "active" : "todo";
+          const state = index < reached ? "done" : index === reached ? "active" : "todo";
           return (
-            <li key={agent} className={`flex items-center gap-3 rounded-xl p-3 transition ${state === "active" ? "bg-blue-50 ring-1 ring-blue-200" : ""}`}>
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm ${state === "done" ? "bg-emerald-100" : state === "active" ? "bg-blue-100" : "bg-slate-100 opacity-60"}`}>
-                {state === "done" ? "✓" : AGENT_INFO[agent].icon}
-              </span>
-              <span className={`text-sm ${state === "todo" ? "text-slate-400" : "font-medium text-slate-800"}`}>{AGENT_INFO[agent].label}</span>
-              {state === "active" && <span className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />}
+            <li key={agent} className={`flex items-center gap-2 rounded-xl p-2.5 text-xs transition ${state === "active" ? "bg-blue-50 ring-1 ring-blue-200" : state === "done" ? "bg-emerald-50" : "bg-slate-50"}`}>
+              <span className="text-base">{state === "done" ? "✅" : AGENT_INFO[agent].icon}</span>
+              <span className={state === "todo" ? "text-slate-400" : "font-medium text-slate-800"}>{AGENT_INFO[agent].label}</span>
+              {state === "active" && <span className="ml-auto h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />}
             </li>
           );
         })}
+      </ol>
+      {backup && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-200">The AI service is busy, so the backup rules are finishing this plan. You still approve it as usual.</p>}
+      <ol ref={feed} className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto rounded-2xl bg-slate-900 p-3 font-mono text-[11.5px] leading-relaxed">
+        {steps.length === 0 && <li className="text-slate-400">Starting…</li>}
+        {steps.map((s, i) => (
+          <li key={i} className={s.kind === "tool" ? "text-sky-300" : s.kind === "status" ? "text-slate-400 italic" : "text-slate-100"}>
+            <span className="text-slate-500">{new Date(s.at).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })} </span>
+            {s.kind === "tool" ? "🔧 " : s.kind === "status" ? "" : `${AGENT_INFO[s.agent]?.icon ?? "•"} `}
+            {withPlates(s.message, resources)}
+          </li>
+        ))}
       </ol>
     </div>
   );
 }
 
-function Assignments({ plan, incidentsById, unitsById }) {
+function Assignments({ plan, incidentsById, unitsById, resources }) {
   const groups = new Map();
   for (const a of plan.assignments) {
     if (!groups.has(a.incidentId)) groups.set(a.incidentId, []);
@@ -63,11 +77,12 @@ function Assignments({ plan, incidentsById, unitsById }) {
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-lg ring-1 ring-slate-200">{unitIcon(unit?.kind)}</span>
                       <div className="min-w-0">
                         <p className="text-sm text-slate-800">
-                          <span className="font-semibold">{unit?.code ?? "Unit"}</span> {unitLabel(unit?.kind).toLowerCase()}
+                          <span className="font-mono font-semibold tracking-wide">{unit ? unitTitle(unit) : "Removed unit"}</span>
                           <span className="text-slate-500"> · {a.etaMinutes} min away ({a.distanceKm} km)</span>
                         </p>
-                        <p className="text-xs leading-relaxed text-slate-500">{a.reason}</p>
-                        {destination && <p className="text-xs text-slate-500">Then to {unitIcon(destination.kind)} {destination.code} ({destination.location.area})</p>}
+                        {unit && <p className="text-xs text-slate-400">{unitSubtitle(unit)}</p>}
+                        <p className="text-xs leading-relaxed text-slate-500">{withPlates(a.reason, resources)}</p>
+                        {destination && <p className="text-xs text-slate-500">Then to {unitIcon(destination.kind)} {destination.name.replace(" (demo)", "")}</p>}
                       </div>
                     </li>
                   );
@@ -81,7 +96,7 @@ function Assignments({ plan, incidentsById, unitsById }) {
   );
 }
 
-export default function PlanTab({ plan, incidents, resources, thinking, planError, onAskAI, onChanged, userName }) {
+export default function PlanTab({ plan, incidents, resources, thinking, steps = [], planError, onAskAI, onChanged, userName }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -90,7 +105,7 @@ export default function PlanTab({ plan, incidents, resources, thinking, planErro
   const unitsById = new Map(resources.map((r) => [r.id, r]));
   const waiting = incidents.filter((i) => ["new", "assessing"].includes(i.status)).length;
 
-  if (thinking) return <Thinking />;
+  if (thinking) return <Thinking steps={steps} resources={resources} />;
 
   const send = async (planToSend) => {
     const res = await dispatchPlan(planToSend.id);
@@ -169,8 +184,9 @@ export default function PlanTab({ plan, incidents, resources, thinking, planErro
         <div className="mb-2 flex items-center gap-2">
           {sent ? <Pill tone="green">✓ Units sent</Pill> : plan.status === "approved" ? <Pill tone="blue">Approved, not sent yet</Pill> : <Pill tone="amber">Needs your approval</Pill>}
           <span className="text-xs text-slate-400">Plan {plan.version}</span>
+          {plan.source === "backup" && <Pill tone="gray">🛟 Backup plan</Pill>}
         </div>
-        <p className="text-[17px] leading-relaxed text-slate-800">{plan.summary}</p>
+        <p className="text-[17px] leading-relaxed text-slate-800">{withPlates(plan.summary, resources)}</p>
       </div>
 
       {plan.uncovered.length > 0 && (
@@ -182,7 +198,7 @@ export default function PlanTab({ plan, incidents, resources, thinking, planErro
                 <p className="text-sm font-semibold text-amber-900">
                   ⚠️ {incident ? `${typeLabel(incident.type)} in ${incident.location.area}` : "An emergency"} is short of help
                 </p>
-                <p className="mt-0.5 text-sm text-amber-900">{u.reason}.</p>
+                <p className="mt-0.5 text-sm text-amber-900">{withPlates(u.reason, resources)}.</p>
               </div>
             );
           })}
@@ -195,14 +211,14 @@ export default function PlanTab({ plan, incidents, resources, thinking, planErro
           <ul className="space-y-1.5">
             {plan.changes.map((c, i) => (
               <li key={i} className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-inset ring-slate-200">
-                <span className="font-medium">{c.what}</span> <span className="text-slate-500">— {c.why}</span>
+                <span className="font-medium">{withPlates(c.what, resources)}</span> <span className="text-slate-500">— {withPlates(c.why, resources)}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <Assignments plan={plan} incidentsById={incidentsById} unitsById={unitsById} />
+      <Assignments plan={plan} incidentsById={incidentsById} unitsById={unitsById} resources={resources} />
 
       {plan.alternatives.length > 0 && !sent && (
         <details className="group rounded-2xl bg-white p-3.5 ring-1 ring-slate-200">
@@ -212,8 +228,8 @@ export default function PlanTab({ plan, incidents, resources, thinking, planErro
           <ul className="mt-3 space-y-2">
             {plan.alternatives.map((a, i) => (
               <li key={i} className="text-sm">
-                <p className="text-slate-800">{a.summary}</p>
-                <p className="text-slate-500">Cost: {a.tradeoff}</p>
+                <p className="text-slate-800">{withPlates(a.summary, resources)}</p>
+                <p className="text-slate-500">Cost: {withPlates(a.tradeoff, resources)}</p>
               </li>
             ))}
           </ul>

@@ -44,6 +44,22 @@ SHELTER_CAPACITIES = ((80, 31), (60, 48), (45, 12), (70, 55))
 UNAVAILABLE_CODES = {"AMB-08", "FIR-03", "FIR-04"}
 
 
+# Fictional Karnataka-style registration plates, fixed so every reset gives the same numbers.
+# RTO code by area, then a series letter pair per kind.
+AREA_RTO = {
+    "Koramangala": 1, "Indiranagar": 3, "Jayanagar": 5,
+    "Malleshwaram": 4, "Hebbal": 50, "Yelahanka New Town": 50,
+}
+KIND_SERIES = {"ambulance": "AM", "fire_unit": "FR", "rescue_team": "RS"}
+
+
+def vehicle_number(kind, area, number):
+    if kind not in KIND_SERIES:
+        return ""
+    digits = 1000 + (number * 2731 + len(area) * 97) % 9000
+    return f"KA {AREA_RTO[area]:02d} {KIND_SERIES[kind]} {digits}"
+
+
 def location(area, index=0):
     lat, lng = AREAS[area]
     # Small fixed offsets keep markers in the neighbourhood without stacking.
@@ -73,6 +89,7 @@ def make_resources():
                 "code": code,
                 "kind": kind,
                 "name": f"{area} {label} {number:02d} (demo)",
+                "vehicleNumber": vehicle_number(kind, area, number),
                 "location": location(area, area_counts[area]),
                 "status": "unavailable" if code in UNAVAILABLE_CODES else "available",
                 "capabilities": [capability] if kind != "fire_unit" else ["fire", "rescue"],

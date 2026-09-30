@@ -1,6 +1,7 @@
 // Owner: Sam
 import { NextResponse } from "next/server";
 import { connectDB, Incident, Resource } from "@/lib/db";
+import { actorFrom, incidentName, logActivity, unitName } from "@/lib/activity";
 
 const EVENTS = new Set(["arrived", "unavailable", "available", "cleared"]);
 const MOBILE_KINDS = new Set(["ambulance", "fire_unit", "rescue_team"]);
@@ -22,6 +23,8 @@ export async function POST(request) {
   }
 
   let session;
+  let loggedIncidentId = null; // for the History entry
+  let resolvedIncident = false;
   try {
     const db = await connectDB();
     session = await db.startSession();
@@ -40,6 +43,7 @@ export async function POST(request) {
       }
 
       const assignedId = resource.assignedIncident ? String(resource.assignedIncident) : null;
+      loggedIncidentId = assignedId;
       let replanNeeded = false;
       if (body.event === "arrived") {
         if (!assignedId || !["reserved", "en_route"].includes(resource.status)) {
@@ -85,6 +89,7 @@ export async function POST(request) {
           incident.status = "planned";
         } else if (body.event === "cleared" && incident.assignedResources.length === 0) {
           incident.status = "resolved";
+          resolvedIncident = true;
         }
         await incident.save({ session });
       }
@@ -95,6 +100,20 @@ export async function POST(request) {
         affectedIncidentIds: assignedId && ["unavailable", "cleared"].includes(body.event) ? [assignedId] : [],
       };
     });
+    const incident = loggedIncidentId ? await Incident.findById(loggedIncidentId) : null;
+    const who = unitName(result.resource);
+    const where = incident ? incidentName(incident) : null;
+    const message = {
+      arrived: `${who} arrived at ${where}`,
+      unavailable: `${who} is out of service${where ? ` (was on its way to ${where}); a replacement is needed` : ""}`,
+      available: `${who} is back in service`,
+      cleared: `${who} finished the job at ${where}`,
+    }[body.event];
+    const actor = await actorFrom(request);
+    await logActivity({ type: `crew_${body.event}`, actor, incidentIds: [loggedIncidentId], resourceId: result.resource.id, message });
+    if (resolvedIncident) {
+      await logActivity({ type: "incident_resolved", actor, incidentIds: [loggedIncidentId], message: `${where} resolved: every unit has finished` });
+    }
     return NextResponse.json({ ok: true, data: result });
   } catch (error) {
     if (error.code === "NOT_FOUND") return errorResponse("NOT_FOUND", error.message, 404);

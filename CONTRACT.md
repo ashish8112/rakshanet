@@ -169,3 +169,24 @@ GEMINI_MODEL=gemini-model-name-shown-in-ai-studio
 ```
 
 Each person uses their **own** Gemini key locally to spread the free limits. Vercel uses Ashish's key. Optional `GEMINI_API_KEYS` (comma separated) lets the app rotate between several keys; `GEMINI_API_KEY` alone still works. All three use the **same** `MONGODB_URI` but Daksh and Ashish should not run `/api/seed` while Sam is testing (it wipes data).
+
+### 5.6 Additions after Phase 3 (Ashish, 1 Oct)
+
+Data:
+- `Resource.vehicleNumber` (string, registration plate such as `"KA 03 AM 1260"`; empty for hospitals/shelters). Shown instead of the code everywhere in the UI.
+- `Plan.source`: `"ai"` or `"backup"` (made by the rule-based backup planner while Gemini was unavailable).
+- New collection **Activity** (`activities`): `{ id, type, message, actor, incidentIds[], resourceId, planVersion, createdAt }`. Types: `incident_reported, incident_updated, incident_resolved, plan_proposed, plan_approved, plan_rejected, plan_edited, units_sent, dispatch_conflict, crew_arrived, crew_unavailable, crew_available, crew_cleared, unit_added, unit_removed, data_reset`. Written by the routes; `actor` is the signed-in dispatcher's name, "AI", "Backup rules" or "System".
+
+Endpoints:
+
+| Method + URL | Request | Response `data` |
+| --- | --- | --- |
+| `POST /api/plan/stream` | same as `/api/plan/generate` | newline-delimited JSON: many `{type:"step", kind:"status"\|"step"\|"tool", agent, message, at}` then `{type:"done", ok, data:{plan, logs}}` |
+| `POST /api/plan/generate` | also accepts `mode: "backup"` (forces the backup planner) | unchanged |
+| `GET /api/activity?incidentId=&limit=` | none | `Activity[]` newest first |
+| `POST /api/resources` | `{ kind, location:{lat,lng,area}, vehicleNumber (vehicles), name?, capacity (hospital/shelter) }` | new `Resource` (code auto: next `AMB-09` etc.) |
+| `DELETE /api/resources/:id` | none | `{ removed: id }`; 409 `UNIT_BUSY` if on a job or holding people |
+| `POST /api/intake` | `{ text }` (caller's words, English/Hindi/Kannada) | `{ type, description, placeQuery, peopleAffected, language, missing[], source: "ai"\|"backup" }` |
+| `GET /api/geocode?q=` | none | `[{ name, area, label, lat, lng, matched }]` Bengaluru places (OpenStreetMap), shorter queries tried if nothing matches |
+
+Pages: `/` control room (emergencies, map, AI plan), `/fleet` (units, crew updates, add/remove), `/history` (impact numbers + activity log), `/login`.

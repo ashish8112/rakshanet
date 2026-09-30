@@ -1,10 +1,11 @@
 // The city map: emergencies, units, hospitals and shelters. Loaded only in the browser (Leaflet needs `window`).
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { severityInfo, typeIcon, typeLabel, unitIcon, unitLabel, unitStatusInfo, incidentStatusInfo, isMobileUnit } from "@/components/labels";
+import { severityInfo, typeIcon, typeLabel, unitIcon, unitLabel, unitStatusInfo, unitTitle, incidentStatusInfo, isMobileUnit } from "@/components/labels";
+import { arrivalText, setDemoSpeed, trip, useDemoSpeed } from "@/components/movement";
 
 const BENGALURU = [12.9716, 77.5946];
 
@@ -70,61 +71,99 @@ function FlyTo({ target }) {
 
 export default function MapView({ incidents, resources, selectedId, onSelectIncident, picking, pickedLocation, onPick }) {
   const byId = new Map(resources.map((r) => [r.id, r]));
+  const incidentsById = new Map(incidents.map((i) => [i.id, i]));
   const selected = incidents.find((i) => i.id === selectedId);
+  const speed = useDemoSpeed();
+  const [now, setNow] = useState(() => Date.now());
+  const moving = resources.some((r) => ["reserved", "en_route"].includes(r.status));
 
-  // Dashed line from every unit on its way / at the scene to its emergency.
+  // Move the vehicles every second while any are on the road.
+  useEffect(() => {
+    if (!moving) return undefined;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [moving]);
+
+  const trips = new Map(resources.map((unit) => [unit.id, trip(unit, incidentsById.get(unit.assignedIncident), now, speed)]));
+
+  // Route of every vehicle on a job: covered part faint, the rest dashed.
   const routes = incidents.flatMap((incident) =>
     (incident.assignedResources ?? [])
       .map((id) => byId.get(id))
       .filter(Boolean)
-      .map((unit) => ({ key: `${unit.id}-${incident.id}`, from: unit.location, to: incident.location }))
+      .map((unit) => ({ key: `${unit.id}-${incident.id}`, from: unit.location, at: trips.get(unit.id)?.position ?? unit.location, to: incident.location }))
   );
 
   return (
-    <MapContainer center={BENGALURU} zoom={12} zoomControl={false} className={`h-full w-full ${picking ? "cursor-crosshair" : ""}`}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <ZoomControl position="bottomright" />
-      {picking && <ClickToPick onPick={onPick} />}
-      <FlyTo target={pickedLocation ?? (selected ? selected.location : null)} />
+    <div className="relative h-full w-full">
+      <MapContainer center={BENGALURU} zoom={12} zoomControl={false} className={`h-full w-full ${picking ? "cursor-crosshair" : ""}`}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <ZoomControl position="bottomright" />
+        {picking && <ClickToPick onPick={onPick} />}
+        <FlyTo target={pickedLocation ?? (selected ? selected.location : null)} />
 
-      {routes.map((route) => (
-        <Polyline key={route.key} positions={[[route.from.lat, route.from.lng], [route.to.lat, route.to.lng]]}
-          pathOptions={{ color: "#2563eb", weight: 3, opacity: 0.7, dashArray: "6 8" }} />
-      ))}
+        {routes.map((route) => (
+          <Polyline key={`${route.key}-done`} positions={[[route.from.lat, route.from.lng], [route.at.lat, route.at.lng]]}
+            pathOptions={{ color: "#94a3b8", weight: 3, opacity: 0.5 }} />
+        ))}
+        {routes.map((route) => (
+          <Polyline key={route.key} positions={[[route.at.lat, route.at.lng], [route.to.lat, route.to.lng]]}
+            pathOptions={{ color: "#2563eb", weight: 3, opacity: 0.8, dashArray: "6 8" }} />
+        ))}
 
-      {resources.map((unit) => (
-        <Marker key={unit.id} position={[unit.location.lat, unit.location.lng]} icon={unitMarker(unit)}>
-          <Popup>
-            <div className="min-w-40 space-y-0.5">
-              <div className="font-semibold text-slate-900">{unitIcon(unit.kind)} {unit.code}</div>
-              <div className="text-slate-600">{unitLabel(unit.kind)} · {unit.location.area}</div>
-              {unit.capacity ? (
-                <div className="text-slate-600">{unit.capacity.total - unit.capacity.used} free places of {unit.capacity.total}</div>
-              ) : (
-                <div className="text-slate-600">{unitStatusInfo(unit.status).label}</div>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+        {resources.map((unit) => {
+          const t = trips.get(unit.id);
+          const at = t?.position ?? unit.location;
+          const job = incidentsById.get(unit.assignedIncident);
+          return (
+            <Marker key={unit.id} position={[at.lat, at.lng]} icon={unitMarker(unit)} zIndexOffset={t ? 500 : 0}>
+              <Popup>
+                <div className="min-w-44 space-y-0.5">
+                  <div className="font-mono font-semibold text-slate-900">{unitIcon(unit.kind)} {unitTitle(unit)}</div>
+                  <div className="text-slate-600">{unitLabel(unit.kind)} · {unit.code} · {unit.location.area} base</div>
+                  {unit.capacity ? (
+                    <div className="text-slate-600">{unit.capacity.total - unit.capacity.used} free places of {unit.capacity.total}</div>
+                  ) : (
+                    <div className="text-slate-600">{unitStatusInfo(unit.status).label}{job ? ` → ${typeLabel(job.type).toLowerCase()} in ${job.location.area}, ${arrivalText(t)}` : ""}</div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
 
-      {incidents.map((incident) => (
-        <Marker key={incident.id} position={[incident.location.lat, incident.location.lng]}
-          icon={incidentMarker(incident, incident.id === selectedId)} zIndexOffset={1000}
-          eventHandlers={{ click: () => onSelectIncident?.(incident.id) }}>
-          <Popup>
-            <div className="min-w-44 space-y-0.5">
-              <div className="font-semibold text-slate-900">{typeLabel(incident.type)} · {incident.location.area}</div>
-              <div className="text-slate-600">{severityInfo(incident.severity).label} · {incidentStatusInfo(incident.status).label}</div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+        {incidents.map((incident) => (
+          <Marker key={incident.id} position={[incident.location.lat, incident.location.lng]}
+            icon={incidentMarker(incident, incident.id === selectedId)} zIndexOffset={1000}
+            eventHandlers={{ click: () => onSelectIncident?.(incident.id) }}>
+            <Popup>
+              <div className="min-w-44 space-y-0.5">
+                <div className="font-semibold text-slate-900">{typeLabel(incident.type)} · {incident.location.area}</div>
+                <div className="text-slate-600">{severityInfo(incident.severity).label} · {incidentStatusInfo(incident.status).label}</div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
-      {pickedLocation && <Marker position={[pickedLocation.lat, pickedLocation.lng]} icon={pickMarker} />}
-    </MapContainer>
+        {pickedLocation && <Marker position={[pickedLocation.lat, pickedLocation.lng]} icon={pickMarker} />}
+      </MapContainer>
+
+      <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] hidden space-y-2 lg:block">
+        <div className="rounded-2xl bg-white/95 px-4 py-3 text-xs text-slate-600 shadow-lg ring-1 ring-slate-200">
+          <p className="mb-1.5 font-semibold text-slate-800">On the map</p>
+          <p>🔥🌊🚗 Emergencies (ring colour = how serious)</p>
+          <p>🚑🚒🦺 Vehicles · <span className="text-emerald-600">green</span> free, <span className="text-blue-600">blue</span> busy</p>
+          <p>🏥🏠 Hospitals and shelters · dashed line = still to drive</p>
+        </div>
+      </div>
+      <button onClick={() => setDemoSpeed(speed === 1)}
+        className={`absolute right-4 top-4 z-[1000] rounded-full px-3.5 py-1.5 text-xs font-medium shadow-md ring-1 transition ${speed > 1 ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"}`}
+        title="Simulated movement: make time pass 10x faster for demos">
+        ⏩ Demo speed {speed > 1 ? "on (10×)" : "off"}
+      </button>
+    </div>
   );
 }

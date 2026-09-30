@@ -22,12 +22,17 @@ Done since Phase 3:
 - Emergency list: newest first. Gemini key rotation (`GEMINI_API_KEYS`, 2 keys on Vercel), model `gemini-3.5-flash-lite`.
 - Seed tuned: FIR-03 + FIR-04 out of service so escalation always happens with 2 new fires. `docs/demo-script.md` written.
 
-IN PROGRESS on branch `ops-improvements` (asked by Ashish, do these BEFORE the video):
-1. History: a full activity log (who reported, AI plans, approvals/rejections with dispatcher name, units sent, crew updates, units added/removed), filterable by emergency; AI steps expandable per plan. Needs a new `activities` collection + logging in routes + `GET /api/activity`.
-2. Units tab: spinner only on the pressed button; several vehicles can be updated quickly and show immediately (optimistic update); sections: On a job grouped by emergency, Free grouped by type, Out of service, Hospitals & shelters (collapsible).
-3. Recognisable vehicles: registration number (e.g. "KA 01 AM 4821") + base station shown everywhere (plan, units, map, emergency cards list their vehicles). Add `vehicleNumber` to Resource + seed script.
-4. Add unit / remove unit (POST /api/resources, DELETE /api/resources/:id, only if not on a job).
-Then update CONTRACT.md, README, demo script; test on the test DB; merge to main.
+DONE on branch `ops-improvements` (1 Oct, tested end to end on the test DB: 24/25 UI checks, the 1 miss was a test mistake):
+- Pages split: `/` control room (emergencies, map, AI plan only), `/fleet`, `/history`; shared shell `components/AppShell.js`, shared data hook `components/useControlRoom.js`.
+- A. Live glass-box planning: `POST /api/plan/stream` (NDJSON) + `streamPlan()`; orchestrator `onStep` emits status/step/tool events; PlanTab shows the real steps and tool calls.
+- B. Quick fill: `POST /api/intake` (Gemini reads the caller's words in English/Hindi/Kannada; keyword backup) + mic dictation (browser speech) in New emergency; place search pre-filled; geocode retries shorter queries.
+- C. Moving vehicles: `components/movement.js` (simulated from base to incident over the tools ETA; "Demo speed" 10x toggle on the map); cards show plates + "arriving in N min".
+- D. Agentic: new emergency is planned automatically; co-pilot bell `components/CopilotBell.js` (AI questions, plan waiting, no units of a type, hospital/shelter almost full, silent crews, clusters).
+- E. Backup planner `lib/agents/backupRules.js`; plan `source: "backup"` badge.
+- F. Impact strip on History (`components/ImpactStrip.js`).
+- I. History log (`activities` collection, `lib/activity.js`, `GET /api/activity`, History page with filters and "Show the AI's steps"); Fleet page grouped (on a job by emergency, free/out of service by type, hospitals & shelters), per-button spinners, instant updates; vehicle plates (`vehicleNumber`, seed script); add unit / remove unit.
+- CONTRACT.md 5.6 and README updated.
+NEXT: merge `ops-improvements` into `main` (deploys), then reset the LIVE data once (needed for plates + FIR-03 out of service) — ask Ashish first, it wipes live data.
 
 AFTER THAT: tutorial video with the brag skill (full brag, any length) → save to `public/tutorial.mp4` and add a "▶ Watch video" button next to "How it works" in the header. Plan already written in `brag-output/brag-plan.md` (git-ignored), recorder script `brag-output/work/record.mjs` (records the real app via Chrome DevTools; will need updating after the UI changes). Hyperframes CLI is used via `npx -y hyperframes@0.8.97` (set `HYPERFRAMES_SKIP_SKILLS=1`).
 

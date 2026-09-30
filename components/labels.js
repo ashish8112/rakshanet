@@ -50,6 +50,19 @@ export const UNIT_KINDS = {
 };
 
 export const unitLabel = (kind) => UNIT_KINDS[kind]?.label ?? "Unit";
+
+// How a vehicle is recognised: its number plate first, then type, code and base.
+export const unitTitle = (unit) => unit?.vehicleNumber || unit?.code || "Unit";
+export const unitSubtitle = (unit) =>
+  unit ? [unitLabel(unit.kind), unit.vehicleNumber ? unit.code : null, `${unit.location?.area ?? ""} base`].filter(Boolean).join(" · ") : "";
+
+// Add the plate after unit codes in AI text: "AMB-03" -> "AMB-03 (KA 03 AM 1260)".
+export function withPlates(text, resources) {
+  if (!text) return text;
+  const plates = new Map(resources.filter((r) => r.vehicleNumber).map((r) => [r.code, r.vehicleNumber]));
+  // Skip codes whose plate is already written in the text (e.g. History entries from the server).
+  return text.replace(/\b(AMB|FIR|RES)-\d{2,}\b(?!\s*\()/g, (code) => (plates.has(code) && !text.includes(plates.get(code)) ? `${code} (${plates.get(code)})` : code));
+}
 export const unitIcon = (kind) => UNIT_KINDS[kind]?.icon ?? "📍";
 export const isMobileUnit = (kind) => ["ambulance", "fire_unit", "rescue_team"].includes(kind);
 
