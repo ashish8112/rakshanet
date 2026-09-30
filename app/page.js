@@ -71,8 +71,25 @@ export default function UberDashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let ignore = false;
+    Promise.all([
+      getIncidents(),
+      getResources(),
+      getCurrentPlan(),
+      getLogs(),
+    ]).then(([incRes, resRes, planRes, logRes]) => {
+      if (!ignore) {
+        if (incRes.ok) setIncidents(incRes.data || []);
+        if (resRes.ok) setResources(resRes.data || []);
+        if (planRes.ok) setCurrentPlan(planRes.data || null);
+        if (logRes.ok) setLogs(logRes.data || []);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Handle map click: prompt to report emergency at exact lat/lng
   const handleMapClick = (coords) => {
