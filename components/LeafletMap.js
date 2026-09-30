@@ -1,7 +1,7 @@
 // Owner: Daksh
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -140,6 +140,8 @@ const createResourceIcon = (kind, status) => {
   });
 };
 
+const emptySubscribe = () => () => {};
+
 export default function LeafletMap({
   incidents = [],
   resources = [],
@@ -149,11 +151,11 @@ export default function LeafletMap({
   onSelectResource = () => {},
   onMapClick = () => {},
 }) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   if (!isMounted) {
     return (
@@ -200,10 +202,10 @@ export default function LeafletMap({
         zoomControl={false}
         className="w-full h-full"
       >
-        {/* CartoDB Voyager Clean High-Contrast Basemap (Uber aesthetic) */}
+        {/* OpenStreetMap Tiles (100% Free, No API Key Required) */}
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
 
