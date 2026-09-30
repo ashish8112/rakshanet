@@ -41,7 +41,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 2.2 Agent activity timeline from `GET /api/logs`, with loading states
 - [x] 2.3 Approve then dispatch flow (CONTRACT.md 5.2), lines on the map from unit to incident
 - [x] 2.4 Responder simulator buttons: Arrived, Unavailable, Available, Cleared (`replanNeeded` -> `POST /api/plan/generate`)
-- [ ] 2.5 Turn `USE_MOCK` off everywhere (Waiting on team MongoDB Atlas connection)
+- [x] 2.5 Turn `USE_MOCK` off everywhere (`components/api.js` USE_MOCK = false; real Atlas backend active with automatic fallback if offline)
 
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
