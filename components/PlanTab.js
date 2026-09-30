@@ -185,6 +185,7 @@ export default function PlanTab({ plan, incidents, resources, thinking, steps = 
           {sent ? <Pill tone="green">✓ Units sent</Pill> : plan.status === "approved" ? <Pill tone="blue">Approved, not sent yet</Pill> : <Pill tone="amber">Needs your approval</Pill>}
           <span className="text-xs text-slate-400">Plan {plan.version}</span>
           {plan.source === "backup" && <Pill tone="gray">🛟 Backup plan</Pill>}
+          {plan.source === "manual" && <Pill tone="gray">✋ Chosen by hand</Pill>}
         </div>
         <p className="text-[17px] leading-relaxed text-slate-800">{withPlates(plan.summary, resources)}</p>
       </div>

@@ -91,7 +91,9 @@ export async function streamPlan({ trigger = "manual", incidentId = null, resour
 
 export const getCurrentPlan = () => request("/api/plan/current");
 export const getPlanHistory = () => request("/api/plan/history");
-export const approvePlan = (id, note = "") => request(`/api/plan/${id}/approve`, { method: "POST", body: { note } });
+export const manualPlan = ({ incidentId, resourceIds, destinationId = null, note = "" }) =>
+  request("/api/plan/manual", { method: "POST", body: { incidentId, resourceIds, destinationId, note } });
+export const approvePlan =(id, note = "") => request(`/api/plan/${id}/approve`, { method: "POST", body: { note } });
 export const rejectPlan = (id, note = "") => request(`/api/plan/${id}/reject`, { method: "POST", body: { note } });
 export const dispatchPlan = (planId) => request("/api/dispatch", { method: "POST", body: { planId } });
 export const getLogs = (planVersion) => request(planVersion ? `/api/logs?planVersion=${planVersion}` : "/api/logs");

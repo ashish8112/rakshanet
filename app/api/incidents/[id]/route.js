@@ -31,7 +31,8 @@ export async function GET(_request, { params }) {
 }
 
 const INCIDENT_STATUSES = new Set(["new", "assessing", "needs_info", "planned", "dispatched", "resolved"]);
-const PATCH_FIELDS = new Set(["description", "peopleAffected", "location", "status"]);
+const PATCH_FIELDS = new Set(["description", "peopleAffected", "location", "status", "severity", "requiredCapabilities"]);
+const CAPABILITIES = new Set(["medical", "fire", "rescue", "beds", "shelter"]);
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -56,6 +57,8 @@ export async function PATCH(request, { params }) {
       ("description" in body && (typeof body.description !== "string" || !body.description.trim())) ||
       ("peopleAffected" in body && body.peopleAffected !== null && (!Number.isInteger(body.peopleAffected) || body.peopleAffected < 0)) ||
       ("status" in body && !INCIDENT_STATUSES.has(body.status)) ||
+      ("severity" in body && (!Number.isInteger(body.severity) || body.severity < 1 || body.severity > 5)) ||
+      ("requiredCapabilities" in body && (!Array.isArray(body.requiredCapabilities) || body.requiredCapabilities.some((c) => !CAPABILITIES.has(c)))) ||
       ("location" in body && (!body.location || typeof body.location !== "object" || Array.isArray(body.location) ||
         !Number.isFinite(body.location.lat) || !Number.isFinite(body.location.lng) ||
         Math.abs(body.location.lat) > 90 || Math.abs(body.location.lng) > 180 ||
@@ -79,12 +82,16 @@ export async function PATCH(request, { params }) {
     if ("peopleAffected" in body) incident.peopleAffected = body.peopleAffected;
     if ("location" in body) incident.location = { lat: body.location.lat, lng: body.location.lng, area: body.location.area.trim() };
     if ("status" in body) incident.status = body.status;
+    if ("severity" in body) { incident.severity = body.severity; incident.severityConfidence = "high"; }
+    if ("requiredCapabilities" in body) incident.requiredCapabilities = [...new Set(body.requiredCapabilities)];
     await incident.save();
     const changed = [
       "description" in body && `description now: "${incident.description}"`,
       "peopleAffected" in body && `people affected: ${incident.peopleAffected ?? "unknown"}`,
       "location" in body && `location: ${incident.location.area}`,
       "status" in body && `status: ${incident.status}`,
+      "severity" in body && `severity set by hand: ${incident.severity}`,
+      "requiredCapabilities" in body && `needs set by hand: ${incident.requiredCapabilities.join(", ") || "none"}`,
     ].filter(Boolean).join("; ");
     await logActivity({ type: "incident_updated", actor: await actorFrom(request), incidentIds: [incident.id], message: `${incidentName(incident)} updated (${changed})` });
     return NextResponse.json({ ok: true, data: incident });
