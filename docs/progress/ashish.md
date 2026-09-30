@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 3
-**Next step:** 3.3 (escalation: expected delay for uncovered incidents, alternatives with trade-offs)
+**Next step:** 3.4 (prompt tuning so summaries read clearly to a non-technical judge)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -56,7 +56,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 - [x] 3.1 Replanning only what changed: allocation sees units already on scene (fills only missing capabilities) and the previous plan's units (keeps them unless needed elsewhere); reopened incidents still fully covered go back to `dispatched`; Command agent is told what triggered the replan so `changes[].why` names the real cause. Tested: AMB-03 breaks down on INC-003 -> v2 = only AMB-04 -> INC-003, why "AMB-03 is now unavailable", ~3 s
 - [x] 3.2 Investigate loop: vague incident -> `needs_info` + question (done in 2.4). Fixed: only low-confidence, severity <= 3 incidents with no units may be investigated; severe ones get units now and keep their follow-up questions
-- [ ] 3.3 Escalation and conflicts: `uncovered` with reason and delay; alternatives with trade-offs
+- [x] 3.3 Escalation: incidents still missing a capability are `uncovered` with reason + `expectedDelayMinutes` (nearest busy capable unit: 20 min on scene + tools ETA), logged as "Escalation" in the timeline. Coverage check: after Gemini, code gives any unmet need the nearest free unused unit (8 -> 14 assignments in a 8-incident shortage test). Allocation repairs bad Gemini output instead of failing; retries tell Gemini what was wrong; 4 Gemini tries with backoff
 - [ ] 3.4 Prompt tuning so reasons and summaries read clearly to a non-technical judge
 
 **Gate 3 (FEATURE FREEZE)**
