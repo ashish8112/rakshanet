@@ -39,6 +39,8 @@ export const searchPlaces = (q) => request(`/api/geocode?q=${encodeURIComponent(
 export const getResources = () => request("/api/resources");
 export const addResource = (unit) => request("/api/resources", { method: "POST", body: unit });
 export const removeResource = (id) => request(`/api/resources/${id}`, { method: "DELETE" });
+// Hospital / shelter: { admitted?, discharged?, total? }
+export const updateCapacity = (id, change) => request(`/api/resources/${id}`, { method: "PATCH", body: change });
 
 // History
 export const getActivity = (incidentId) => request(incidentId ? `/api/activity?incidentId=${incidentId}` : "/api/activity");

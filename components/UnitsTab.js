@@ -4,7 +4,7 @@
 "use client";
 
 import { useState } from "react";
-import { addResource, removeResource, updateResponder } from "@/components/api";
+import { addResource, removeResource, updateCapacity, updateResponder } from "@/components/api";
 import { PlaceSearch } from "@/components/NewEmergency";
 import { UNIT_KINDS, isMobileUnit, typeIcon, typeLabel, unitIcon, unitLabel, unitStatusInfo, unitSubtitle, unitTitle } from "@/components/labels";
 import { Button, ErrorNote, Pill } from "@/components/ui";
@@ -154,6 +154,61 @@ function AddUnitForm({ onAdded, onCancel }) {
   );
 }
 
+// One hospital or shelter: how full it is, and buttons for what they report by phone.
+function PlaceRow({ place, onSaved, onRemove }) {
+  const [amount, setAmount] = useState("1");
+  const [editingTotal, setEditingTotal] = useState(false);
+  const [total, setTotal] = useState(String(place.capacity.total));
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const { used, total: max } = place.capacity;
+  const free = max - used;
+  const pct = Math.round((used / max) * 100);
+  const word = place.kind === "hospital" ? "beds" : "places";
+  const n = Math.max(1, Math.floor(Number(amount) || 1));
+
+  const change = async (what, body) => {
+    setBusy(what);
+    setError("");
+    const res = await updateCapacity(place.id, body);
+    setBusy("");
+    if (!res.ok) return setError(res.error?.message ?? "Could not save.");
+    setEditingTotal(false);
+    onSaved(res.data);
+  };
+
+  return (
+    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-inset ring-slate-200">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 truncate font-medium text-slate-800">{unitIcon(place.kind)} {place.name.replace(" (demo)", "")}</span>
+        <span className={free <= 5 ? "shrink-0 font-semibold text-red-600" : "shrink-0 text-slate-600"}>{free} of {max} {word} free</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+        <div className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+      </div>
+      {editingTotal ? (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-slate-600">Total {word}:</span>
+          <input type="number" min={Math.max(1, used)} value={total} onChange={(e) => setTotal(e.target.value)}
+            className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 outline-none focus:border-blue-500" />
+          <Button size="sm" loading={busy === "total"} onClick={() => change("total", { total: Math.floor(Number(total)) })}>Save</Button>
+          <Button size="sm" variant="ghost" onClick={() => { setEditingTotal(false); setTotal(String(max)); }}>Cancel</Button>
+        </div>
+      ) : (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="How many people"
+            className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm outline-none focus:border-blue-500" />
+          <Button size="sm" variant="secondary" loading={busy === "in"} disabled={free < n} onClick={() => change("in", { admitted: n })}>＋ Admitted</Button>
+          <Button size="sm" variant="secondary" loading={busy === "out"} disabled={used < n} onClick={() => change("out", { discharged: n })}>− Discharged</Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditingTotal(true)}>Edit total</Button>
+          {used === 0 && <button onClick={onRemove} className="ml-auto text-xs text-red-600 underline underline-offset-2">Remove</button>}
+        </div>
+      )}
+      <ErrorNote message={error} />
+    </div>
+  );
+}
+
 export default function UnitsTab({ resources, incidents, onChanged, onUnitSaved, onUnitRemoved, onAskAI }) {
   const [pending, setPending] = useState(() => new Set());
   const [message, setMessage] = useState("");
@@ -267,24 +322,11 @@ export default function UnitsTab({ resources, incidents, onChanged, onUnitSaved,
       </Section>
 
       <Section title="Hospitals & shelters" count={places.length} defaultOpen={false}>
-        {places.map((place) => {
-          const freePlaces = place.capacity ? place.capacity.total - place.capacity.used : 0;
-          const pct = place.capacity ? Math.round((place.capacity.used / place.capacity.total) * 100) : 0;
-          return (
-            <div key={place.id} className="rounded-xl bg-slate-50 p-3 ring-1 ring-inset ring-slate-200">
-              <div className="flex items-center justify-between gap-2 text-sm">
-                <span className="min-w-0 truncate font-medium text-slate-800">{unitIcon(place.kind)} {place.name.replace(" (demo)", "")}</span>
-                <span className={freePlaces <= 5 ? "shrink-0 font-semibold text-red-600" : "shrink-0 text-slate-600"}>{freePlaces} free</span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
-                <div className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
-              </div>
-              {place.capacity?.used === 0 && (
-                <button onClick={() => remove(place)} className="mt-2 text-xs text-red-600 underline underline-offset-2">Remove</button>
-              )}
-            </div>
-          );
-        })}
+        <p className="px-1 text-xs text-slate-500">When a hospital or shelter phones in, record who came in or left. Beds also fill automatically when the AI or you send people there.</p>
+        {places.map((place) => (
+          <PlaceRow key={place.id} place={place} onSaved={(saved) => { onUnitSaved(saved); setMessage(`${saved.name.replace(" (demo)", "")}: ${saved.capacity.total - saved.capacity.used} of ${saved.capacity.total} free now.`); }}
+            onRemove={() => remove(place)} />
+        ))}
       </Section>
     </div>
   );
