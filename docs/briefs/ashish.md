@@ -23,7 +23,7 @@ Shared files (package.json, app/layout.js, CONTRACT.md, CLAUDE.md, .env.example,
 
 ## Lead duties
 
-Review and merge Sam's and Daksh's PRs (Sam reviews mine). Run the 2-hourly syncs. Decide when a feature gets cut. Edit `CONTRACT.md` after the team agrees on a change.
+Review and merge Sam's and Daksh's PRs (Sam reviews mine). Run the 2-hourly syncs. Decide when a feature gets cut. Edit `CONTRACT.md` after the team agrees on a change. Own the Vercel deployment: project setup, env variables, live link, redeploys.
 
 ## My steps
 
