@@ -1,0 +1,56 @@
+[
+  {
+    "code": "INC-001",
+    "type": "flood",
+    "description": "Heavy rain has flooded two ground-floor homes; 10 residents need help leaving.",
+    "location": {
+      "lat": 12.934,
+      "lng": 77.6234,
+      "area": "Koramangala"
+    },
+    "peopleAffected": 10,
+    "status": "new",
+    "severity": null,
+    "severityConfidence": null,
+    "requiredCapabilities": [],
+    "followUpQuestions": [],
+    "possibleDuplicateOf": null,
+    "assignedResources": []
+  },
+  {
+    "code": "INC-002",
+    "type": "accident",
+    "description": "Two vehicles collided near a junction; four people are reported injured.",
+    "location": {
+      "lat": 13.0346,
+      "lng": 77.5959,
+      "area": "Hebbal"
+    },
+    "peopleAffected": 4,
+    "status": "new",
+    "severity": null,
+    "severityConfidence": null,
+    "requiredCapabilities": [],
+    "followUpQuestions": [],
+    "possibleDuplicateOf": null,
+    "assignedResources": []
+  },
+  {
+    "code": "INC-003",
+    "type": "collapse",
+    "description": "Part of a building has collapsed; the number of trapped people is unknown.",
+    "location": {
+      "lat": 12.9707,
+      "lng": 77.6401,
+      "area": "Indiranagar"
+    },
+    "peopleAffected": null,
+    "status": "new",
+    "severity": null,
+    "severityConfidence": null,
+    "requiredCapabilities": [],
+    "followUpQuestions": [],
+    "possibleDuplicateOf": null,
+    "assignedResources": []
+  }
+]

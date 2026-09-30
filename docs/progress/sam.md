@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 1
-**Next step:** 0.2 (setup) if not done, then 1.2 (seed data Python script)
+**Next step:** Phase 1/2 PR handoff for 1.4 and 2.1; confirm seed endpoint access policy with the team before deployment, then start 2.2
 **Branch:** backend-data (already exists on GitHub, created by Ashish)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -21,7 +21,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 ## Phase 0: Setup and skeleton (1:15 PM to 2:00 PM)
 
 - [x] 0.1 MongoDB Atlas (done by Ashish): cluster + user exist, connection tested, database `rakshanet` (empty until seeding)
-- [ ] 0.2 Pull `main`, `npm install`, create `.env.local` from `.env.example` (get `MONGODB_URI` from Ashish)
+- [x] 0.2 Pull `main`, `npm install`, create `.env.local` from `.env.example` (get `MONGODB_URI` from Ashish). Dependencies are installed, Sam confirmed the app opens locally, database API calls succeeded, and all three environment values are set. The Gemini model API was intermittent during checks (HTTP 503); one request succeeded without text at a very low output limit.
 - [x] 0.3 Vercel: NOT Sam's job anymore (Ashish owns deployment)
 - [x] 0.4 Branch `backend-data` created and pushed (by Ashish)
 
@@ -34,9 +34,9 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 ## Phase 1: Foundations (2:00 PM to 4:30 PM)
 
 - [x] 1.1 DB layer (done by Ashish): `lib/db/connect.js` (cached connection), models Incident, Resource, Plan, AgentLog in `lib/db/models/`, exported from `lib/db/index.js`. Tested: shapes match CONTRACT.md 5.1, JSON uses `id`, bad enums rejected, real Atlas connection works, build passes.
-- [ ] 1.2 Seed data: Python script in `scripts/` writing `data/resources.json` (~8 ambulances, 4 fire units, 4 rescue teams, 6 hospitals, 4 shelters, real Bengaluru areas) + `data/demo-incidents.json`
-- [ ] 1.3 `POST /api/seed`: resets the database to the seed data
-- [ ] 1.4 `GET /api/resources` (optional `?kind=`), `GET /api/incidents`, `POST /api/incidents`; each tested with curl, PR merged
+- [x] 1.2 Seed data: `scripts/generate_seed_data.py` writes `data/resources.json` (8 ambulances, 4 fire units, 4 rescue teams, 6 hospitals, 4 shelters across six Bengaluru areas) and `data/demo-incidents.json` (3 incidents). Fictional facilities and availability; coordinates are approximate neighbourhood positions. Checked counts, contract shapes, unique codes and resource positions, capacities, and identical output on rerun.
+- [x] 1.3 `POST /api/seed`: route validates the seed data and resets incidents, resources, plans, and logs in one transaction. Approved live test returned 3 incidents and 26 resources; follow-up reads confirmed the counts and removal of the temporary incident.
+- [ ] 1.4 `GET /api/resources` (optional `?kind=`), `GET /api/incidents`, `POST /api/incidents`; routes implemented and tested with local curl commands. A temporary incident was created, read by id and list, then removed by the approved seed reset. PR merge remains pending.
 
 **Gate 1 (whole team)**
 - [ ] All Phase 1 PRs merged into `main`
@@ -46,7 +46,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 ## Phase 2: Core loop (4:30 PM to 8:00 PM)
 
-- [ ] 2.1 All 7 tool functions in `lib/tools/index.js` (CONTRACT.md 5.3), one worked example each; open PR early
+- [ ] 2.1 All 7 tool functions implemented in `lib/tools/index.js` with contract names and outputs. Worked examples passed against seeded Atlas data: Koramangala to Indiranagar 4.5 km, ambulance ETA 9 min; 7 available ambulances; nearest medical units AMB-01/02/03; HOS-01 has 14 free places for 10 needed; a same-location incident is detected as a duplicate; an available assignment validates and an unavailable unit conflicts. Hospital over-capacity also conflicts. ESLint and webpack build pass. PR remains pending.
 - [ ] 2.2 `POST /api/responders/update` and `PATCH /api/incidents/:id`
 - [ ] 2.3 `POST /api/dispatch` with revalidation (`validateAssignments`); reserve units, incidents -> `dispatched`; on conflict commit nothing
 
@@ -81,6 +81,10 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 ## Notes
 
+- Local check on 2026-09-30: `backend-data` tracks `origin/backend-data`; `package-lock.json` has pre-existing uncommitted changes. Preserve that lockfile change while working.
+- Phase 1 routes pass ESLint and `npm run build -- --webpack`. The default Turbopack build failed in this environment while fetching fonts or binding a worker port. The seed endpoint follows the current contract and has no access control; the team should settle access before deploying it.
+- The shared Atlas database now contains 26 seeded resources and 3 seeded incidents. No plans or agent logs were seeded.
+- `findNearestAvailable` handles mobile capabilities (`medical`, `fire`, `rescue`); hospital and shelter destinations use `findNearestWithCapacity`. Assignment destination capacity currently counts one place per assignment because the Plan assignment contract has no patient or occupant count.
 - Import with: `import { connectDB, Incident, Resource, Plan, AgentLog } from "@/lib/db";` and `await connectDB()` before any query.
 - `toJSON` turns `_id` into `id`. It does NOT apply to `.lean()` results, so routes should send documents (or `doc.toJSON()`), not lean objects.
 - ID fields in plans/logs (`incidentId`, `resourceId`, `destinationId`) are real ObjectIds: saving a plan with a fake id like `"66f..."` fails validation.
