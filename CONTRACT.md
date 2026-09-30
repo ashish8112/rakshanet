@@ -166,4 +166,4 @@ GEMINI_API_KEY=your_own_key_from_ai_studio
 GEMINI_MODEL=gemini-model-name-shown-in-ai-studio
 ```
 
-Each person uses their **own** Gemini key locally to spread the free limits. Vercel uses Ashish's key. All three use the **same** `MONGODB_URI` but Daksh and Ashish should not run `/api/seed` while Sam is testing (it wipes data).
+Each person uses their **own** Gemini key locally to spread the free limits. Vercel uses Ashish's key. Optional `GEMINI_API_KEYS` (comma separated) lets the app rotate between several keys; `GEMINI_API_KEY` alone still works. All three use the **same** `MONGODB_URI` but Daksh and Ashish should not run `/api/seed` while Sam is testing (it wipes data).

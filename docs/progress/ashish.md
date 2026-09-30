@@ -68,7 +68,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 - [ ] 4.1 Sleep in shifts, one person always awake
 - [ ] 4.2 Bug fixes only, through PRs (keep the Vercel deploy green)
-- [ ] 4.3 README technical part + voice for the demo video
+- [ ] 4.3 README technical part DONE (what it does, agent pipeline, design principles, stack, structure, API; Setup section left for Sam). Voice for the demo video still to do
 - [ ] 4.4 Final checklist, submit by 6:30 AM
 
 ## Blockers
@@ -78,6 +78,8 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
+
+- Gemini key rotation: optional `GEMINI_API_KEYS=key1,key2,key3` (comma separated) on Vercel spreads the 15 requests/minute free limit; a rate-limited key hands over to the next, invalid keys are skipped. Tested with a fake + real key. To use it: collect Sam's and Daksh's keys, add `GEMINI_API_KEYS` on Vercel, redeploy.
 
 - Gemini free tier = 15 requests/minute per model for the whole app (Vercel uses Ashish's key). One plan = ~3 calls + 1 per new incident. Avoid clicking Generate Plan repeatedly during the demo.
 
