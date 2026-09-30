@@ -73,3 +73,4 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 ## Notes
 
 - Deployment is owned by Ashish (Vercel live link).
+- Gate 2: `PlanPanel.js` wired with exact `approve -> dispatchPlan({ planId }) -> if committed: false replan(trigger: 'resource_change')` logic from `/dispatch`, with optional reject note and status/conflict banners. Available both on dedicated `/dispatch` page and as a collapsible drawer on the main dashboard (`/`).

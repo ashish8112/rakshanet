@@ -6,7 +6,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ReportModal from "@/components/ReportModal";
-import { getIncidents, getResources, getCurrentPlan } from "@/components/api";
+import PlanPanel from "@/components/PlanPanel";
+import {
+  getIncidents,
+  getResources,
+  getCurrentPlan,
+  getLogs,
+} from "@/components/api";
 import {
   getAreaName,
   getNearestResponders,
@@ -31,33 +37,43 @@ export default function HomeDashboardPage() {
   const [incidents, setIncidents] = useState([]);
   const [resources, setResources] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
+  const [logs, setLogs] = useState([]);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [selectedResource, setSelectedResource] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [clickedLocation, setClickedLocation] = useState(null);
+  const [planCollapsed, setPlanCollapsed] = useState(true);
 
   const loadData = () => {
-    Promise.all([getIncidents(), getResources(), getCurrentPlan()]).then(
-      ([incRes, resRes, planRes]) => {
-        if (incRes.ok) setIncidents(incRes.data || []);
-        if (resRes.ok) setResources(resRes.data || []);
-        if (planRes.ok) setCurrentPlan(planRes.data || null);
-      }
-    );
+    Promise.all([
+      getIncidents(),
+      getResources(),
+      getCurrentPlan(),
+      getLogs(),
+    ]).then(([incRes, resRes, planRes, logRes]) => {
+      if (incRes.ok) setIncidents(incRes.data || []);
+      if (resRes.ok) setResources(resRes.data || []);
+      if (planRes.ok) setCurrentPlan(planRes.data || null);
+      if (logRes?.ok) setLogs(logRes.data || []);
+    });
   };
 
   useEffect(() => {
     let ignore = false;
-    Promise.all([getIncidents(), getResources(), getCurrentPlan()]).then(
-      ([incRes, resRes, planRes]) => {
-        if (!ignore) {
-          if (incRes.ok) setIncidents(incRes.data || []);
-          if (resRes.ok) setResources(resRes.data || []);
-          if (planRes.ok) setCurrentPlan(planRes.data || null);
-        }
+    Promise.all([
+      getIncidents(),
+      getResources(),
+      getCurrentPlan(),
+      getLogs(),
+    ]).then(([incRes, resRes, planRes, logRes]) => {
+      if (!ignore) {
+        if (incRes.ok) setIncidents(incRes.data || []);
+        if (resRes.ok) setResources(resRes.data || []);
+        if (planRes.ok) setCurrentPlan(planRes.data || null);
+        if (logRes?.ok) setLogs(logRes.data || []);
       }
-    );
+    });
     return () => {
       ignore = true;
     };
@@ -390,6 +406,17 @@ export default function HomeDashboardPage() {
         <div className="absolute bottom-6 right-5 z-10 bg-black/85 backdrop-blur-md text-white text-xs font-medium px-4 py-2 rounded-full shadow-2xl border border-neutral-800 pointer-events-none hidden sm:flex items-center gap-2">
           <span>💡 Click anywhere on the map to drop a rescue pin & calculate ETA</span>
         </div>
+
+        {/* Floating Right Drawer: AI Dispatch Plan & Timeline */}
+        <PlanPanel
+          currentPlan={currentPlan}
+          logs={logs}
+          resources={resources}
+          incidents={incidents}
+          onRefresh={loadData}
+          collapsed={planCollapsed}
+          onToggleCollapse={() => setPlanCollapsed((prev) => !prev)}
+        />
       </main>
 
       {/* Emergency Request Modal */}

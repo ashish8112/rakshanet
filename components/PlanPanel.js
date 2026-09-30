@@ -2,7 +2,12 @@
 "use client";
 
 import { useState } from "react";
-import { approvePlan, rejectPlan, generatePlan } from "@/components/api";
+import {
+  approvePlan,
+  rejectPlan,
+  generatePlan,
+  dispatchPlan,
+} from "@/components/api";
 
 export default function PlanPanel({
   currentPlan = null,
@@ -16,33 +21,109 @@ export default function PlanPanel({
 }) {
   const [activeTab, setActiveTab] = useState("plan"); // 'plan' | 'timeline'
   const [actionLoading, setActionLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [conflictAlert, setConflictAlert] = useState(null);
   const [rejectModal, setRejectModal] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
 
+  // Gate 2 sequence: approve -> dispatchPlan({ planId }) -> if committed: false, show conflicts & generate(trigger: 'resource_change')
   const handleApprove = async () => {
     if (!currentPlan || actionLoading) return;
     setActionLoading(true);
-    await approvePlan(currentPlan.id, { note: "Approved by dispatcher" });
-    await onRefresh();
+    setLoadingMessage("1/2 Approving plan...");
+    setStatusMessage(null);
+    setConflictAlert(null);
+
+    const appRes = await approvePlan(currentPlan.id, {
+      note: "Approved by dispatcher for field execution",
+    });
+
+    if (!appRes.ok) {
+      setStatusMessage({
+        type: "error",
+        text: appRes.error?.message || "Failed to approve plan",
+      });
+      setActionLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+
+    setLoadingMessage("2/2 Committing plan and dispatching units...");
+    const dispRes = await dispatchPlan({ planId: currentPlan.id });
+
+    if (dispRes.ok) {
+      if (dispRes.data?.committed) {
+        setStatusMessage({
+          type: "success",
+          text: `✓ Plan v${currentPlan.version} committed! Units dispatched and en route.`,
+        });
+        await onRefresh();
+      } else if (dispRes.data?.conflicts) {
+        // If committed: false, show conflicts and auto-generate with trigger resource_change
+        setConflictAlert(dispRes.data.conflicts);
+        setStatusMessage({
+          type: "warning",
+          text: "Unit availability changed! Re-evaluating optimal assignments...",
+        });
+        setLoadingMessage("Resolving conflicts via Gemini replanning (trigger: resource_change)...");
+        await generatePlan({ trigger: "resource_change" });
+        await onRefresh();
+      }
+    } else {
+      setStatusMessage({
+        type: "error",
+        text: dispRes.error?.message || "Failed to commit dispatch plan",
+      });
+    }
     setActionLoading(false);
+    setLoadingMessage("");
   };
 
   const handleReject = async () => {
-    if (!currentPlan || actionLoading || !rejectNote.trim()) return;
+    if (!currentPlan || actionLoading) return;
     setActionLoading(true);
-    await rejectPlan(currentPlan.id, { note: rejectNote });
-    setRejectModal(false);
-    setRejectNote("");
-    await onRefresh();
+    setLoadingMessage("Rejecting plan...");
+    const res = await rejectPlan(currentPlan.id, { note: rejectNote.trim() || "" });
+    if (res.ok) {
+      setStatusMessage({
+        type: "info",
+        text: `Plan v${currentPlan.version} marked as rejected.`,
+      });
+      setRejectModal(false);
+      setRejectNote("");
+      await onRefresh();
+    } else {
+      setStatusMessage({
+        type: "error",
+        text: res.error?.message || "Failed to reject plan",
+      });
+    }
     setActionLoading(false);
+    setLoadingMessage("");
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (trigger = "manual") => {
     if (actionLoading) return;
     setActionLoading(true);
-    await generatePlan({ trigger: "manual" });
+    setLoadingMessage("Synthesizing multi-agent dispatch plan (~3–8s)...");
+    setStatusMessage(null);
+    setConflictAlert(null);
+    const res = await generatePlan({ trigger });
+    if (res.ok) {
+      setStatusMessage({
+        type: "success",
+        text: `AI Plan v${res.data?.plan?.version || "New"} synthesized successfully.`,
+      });
+    } else {
+      setStatusMessage({
+        type: "error",
+        text: res.error?.message || "Plan generation failed",
+      });
+    }
     await onRefresh();
     setActionLoading(false);
+    setLoadingMessage("");
   };
 
   const resourceMap = new Map(resources.map((r) => [r.id, r]));
@@ -110,6 +191,68 @@ export default function PlanPanel({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        {/* Status Notification Banner */}
+        {statusMessage && (
+          <div
+            className={`p-3 rounded-2xl text-xs flex items-center justify-between border ${
+              statusMessage.type === "success"
+                ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                : statusMessage.type === "warning"
+                ? "bg-amber-50 text-amber-900 border-amber-200"
+                : statusMessage.type === "info"
+                ? "bg-blue-50 text-blue-900 border-blue-200"
+                : "bg-red-50 text-red-900 border-red-200"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span>
+                {statusMessage.type === "success"
+                  ? "✓"
+                  : statusMessage.type === "warning"
+                  ? "⚠️"
+                  : statusMessage.type === "info"
+                  ? "ℹ"
+                  : "✕"}
+              </span>
+              <span className="font-medium">{statusMessage.text}</span>
+            </div>
+            <button
+              onClick={() => setStatusMessage(null)}
+              className="text-neutral-400 hover:text-neutral-700 text-xs font-bold ml-2"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Dispatch Conflict Alert (with replanning trigger: resource_change info) */}
+        {conflictAlert && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 text-xs space-y-1.5 shadow-sm">
+            <div className="font-bold text-amber-900 flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>Dispatch Conflict Detected (Replanning Triggered)</span>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-snug">
+              Units became unavailable during dispatch. Auto-triggering replan (trigger: resource_change):
+            </p>
+            <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-amber-900">
+              {conflictAlert.map((c, i) => (
+                <li key={i}>
+                  <strong>{resourceMap.get(c.resourceId)?.name || c.resourceId}:</strong> {c.reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Action Loading Progress Indicator */}
+        {actionLoading && loadingMessage && (
+          <div className="bg-neutral-900 text-white rounded-2xl p-3 text-xs flex items-center gap-2.5 animate-pulse shadow-md">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin shrink-0" />
+            <span className="font-medium text-[11px]">{loadingMessage}</span>
+          </div>
+        )}
+
         {activeTab === "plan" ? (
           <div>
             {!currentPlan ? (
@@ -124,7 +267,7 @@ export default function PlanPanel({
                   Run the multi-agent orchestration engine to optimize unit assignments.
                 </p>
                 <button
-                  onClick={handleGenerate}
+                  onClick={() => handleGenerate("manual")}
                   disabled={actionLoading}
                   className="px-5 py-2.5 rounded-full bg-black text-white font-bold text-xs shadow-lg"
                 >
@@ -260,7 +403,7 @@ export default function PlanPanel({
                       disabled={actionLoading}
                       className="flex-1 py-3 rounded-full bg-black hover:bg-neutral-800 active:scale-95 text-white text-xs font-bold tracking-tight shadow-xl transition disabled:opacity-50"
                     >
-                      Approve & Dispatch
+                      {actionLoading ? "Dispatching..." : "Approve & Dispatch"}
                     </button>
                     <button
                       onClick={() => setRejectModal(true)}
@@ -314,12 +457,12 @@ export default function PlanPanel({
               Reject Dispatch Plan
             </h3>
             <p className="text-xs text-neutral-600">
-              Provide feedback for the AI agents to explain why this plan is being rejected:
+              Provide feedback for the AI agents to explain why this plan is being rejected (optional):
             </p>
             <textarea
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="e.g. Reserve SDRF Alpha for structural collapse zone..."
+              placeholder="e.g. Reserve SDRF Alpha for structural collapse zone... (optional)"
               className="w-full h-24 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 text-xs text-black focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
             />
             <div className="flex justify-end gap-2 text-xs font-bold">
@@ -331,10 +474,10 @@ export default function PlanPanel({
               </button>
               <button
                 onClick={handleReject}
-                disabled={!rejectNote.trim()}
+                disabled={actionLoading}
                 className="px-5 py-2.5 rounded-full bg-[#e11900] hover:bg-red-700 text-white disabled:opacity-50"
               >
-                Confirm Reject
+                {actionLoading ? "Rejecting..." : "Confirm Reject"}
               </button>
             </div>
           </div>
