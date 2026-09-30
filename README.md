@@ -3,6 +3,8 @@
 **An AI-assisted emergency control room for Bengaluru.** Four AI agents plan which ambulances, fire units and rescue teams go to which emergency, a human dispatcher approves every decision, and the plan updates itself when things change on the ground.
 
 Live demo: https://rakshanet-three.vercel.app
+
+Tutorial video (5 min, no login needed): https://rakshanet-three.vercel.app/tutorial.mp4
 Built in 24 hours by team **CodeStorm** (Ashish, Daksh, Sam) for the Agentic AI hackathon.
 
 ---

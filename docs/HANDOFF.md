@@ -89,6 +89,6 @@ Browser end-to-end tests are written as Node scripts that drive headless Chrome 
 
 ## 7. What is left
 
-1. **Tutorial video** (brag skill, full workflow, any length) → `public/tutorial.mp4` + "▶ Watch video" button next to "How it works". Plan in `brag-output/brag-plan.md`; recorder `brag-output/work/record.mjs` must be updated to the new UI (pages, Quick fill, manual mode, card actions, dark mode). Hyperframes: `npx -y hyperframes@0.8.97`, `HYPERFRAMES_SKIP_SKILLS=1`.
-2. Refresh `docs/demo-script.md` for the newest UI (Quick fill, live stream, Fleet page, manual mode, card actions).
+1. DONE: **Tutorial video** (4:56, 13 chapters, recorded from the real app). Web copy `public/tutorial.mp4` (12.6 MB, 720p) + poster `public/tutorial.jpg`, public without login at https://rakshanet-three.vercel.app/tutorial.mp4 (`proxy.js` matcher skips .mp4). Played by "▶ Watch video" in the header (`VideoDialog` in `components/AppShell.js`) and "▶ Watch the demo video" on the login page. Full-quality master + working files in git-ignored `brag-output/` (`brag.mp4`, `brag.jpg`, `brag-plan.md`, `share-copy.txt`, recorder `work/record2.mjs` + `work/record-tail.mjs`, `work/build-clips.mjs`, `work/build-comp.mjs`, Hyperframes project `composition/`). Re-render: `cd brag-output/composition && NODE_OPTIONS=--max-old-space-size=8192 npx -y hyperframes@0.8.97 render --video-frame-format jpg --workers 3`.
+2. DONE: `docs/demo-script.md` rewritten for the newest UI.
 3. Hackathon delivery: slides, final checklist; security to-dos after the event.

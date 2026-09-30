@@ -39,7 +39,9 @@ DONE (1 Oct, merged into main): ops-improvements; LIVE data reset done. Then on 
 - Card actions on the home page: Arrived / Job done per vehicle, Mark resolved, Cancel report (`POST /api/incidents/:id/close`, status `cancelled`). 13/13 browser checks.
 FULL PROJECT KNOWLEDGE FOR A NEW CHAT: `docs/HANDOFF.md`.
 
-AFTER THAT: tutorial video with the brag skill (full brag, any length) → save to `public/tutorial.mp4` and add a "▶ Watch video" button next to "How it works" in the header. Plan already written in `brag-output/brag-plan.md` (git-ignored), recorder script `brag-output/work/record.mjs` (records the real app via Chrome DevTools; will need updating after the UI changes). Hyperframes CLI is used via `npx -y hyperframes@0.8.97` (set `HYPERFRAMES_SKIP_SKILLS=1`).
+DONE (1 Oct, branch tutorial-video → main): tutorial video (4:56) at `public/tutorial.mp4` (+ `public/tutorial.jpg` poster), public link https://rakshanet-three.vercel.app/tutorial.mp4, "▶ Watch video" in the header, "▶ Watch the demo video" on login. Recording found and fixed: manual send to an already-dispatched incident (reinforcements now allowed), double plates in History, new card not shown while planning, Fleet 0/0 flash. New `docs/demo-script.md`. Third Gemini key added on Vercel (GEMINI_API_KEYS has 3). Full-quality master in `brag-output/brag.mp4` (git-ignored).
+
+NEXT: slides, final checklist; security rotations after the event.
 
 Testing without touching live data: run the app locally against the separate DB `rakshanet_test` (same Atlas cluster, replace `/rakshanet?` with `/rakshanet_test?` in MONGODB_URI), e.g. `MONGODB_URI=... DISPATCHER_PASSWORD=demo-shift npx next start -p 3058`.
 
