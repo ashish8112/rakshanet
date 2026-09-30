@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 3 (Gate 2 team integration is still pending)
-**Next step:** 3.3 demo script; Gate 2 live integration checks remain pending
+**Current phase:** 3 done (all Sam steps done; only team gates and Phase 4 wrap-up left)
+**Next step:** nothing to build. Join the team gate checks (Gate 2 and Gate 3 on the live link) and Phase 4 (4.1 shifts, 4.2 bug fixes, 4.4 final checklist)
 **Branch:** backend-data (already exists on GitHub, created by Ashish)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -17,6 +17,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
   `git fetch origin` then `git checkout backend-data` then `git pull`
 - Do NOT rewrite `lib/db/`. Step 1.1 is finished; build on it.
 - Do NOT deploy to Vercel. Ashish owns deployment.
+- Do NOT redo 3.3, 3.4, 3.5 or 4.3: Ashish finished them on 30 Sep (see below). `docs/demo-script.md`, the seed tuning (FIR-03 unavailable) and the README Setup section already exist on `main`.
 
 ## Phase 0: Setup and skeleton (1:15 PM to 2:00 PM)
 
@@ -27,8 +28,8 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 **Gate 0 (whole team)**
 - [ ] All 3 laptops show the app at `localhost:3000`
-- [ ] Vercel live link opens
-- [ ] 3 branches exist on GitHub
+- [x] Vercel live link opens
+- [x] 3 branches exist on GitHub
 - [ ] Everyone has read `CONTRACT.md` and has no open questions
 
 ## Phase 1: Foundations (2:00 PM to 4:30 PM)
@@ -39,7 +40,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 - [x] 1.4 `GET /api/resources` (optional `?kind=`), `GET /api/incidents`, `POST /api/incidents`; routes tested with local curl commands. A temporary incident was created, read by id and list, then removed by the approved seed reset. PR #1 merged into `main` on 2026-09-30.
 
 **Gate 1 (whole team)**
-- [ ] All Phase 1 PRs merged into `main`
+- [x] All Phase 1 PRs merged into `main`
 - [ ] Report form saves a real incident to MongoDB
 - [ ] Map shows the real seeded resources (not mock)
 - [ ] Assessment agent returns valid JSON for all 3 test incidents
@@ -53,15 +54,15 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
 - [ ] `POST /api/seed` resets everything for a clean demo
-- [ ] Everyone's work is merged; nothing important lives only on a laptop
+- [x] Everyone's work is merged; nothing important lives only on a laptop
 
 ## Phase 3: Replanning, edge cases, polish (8:00 PM to 1:00 AM)
 
 - [x] 3.1 Duplicate detection in `POST /api/incidents` using Sam's tool. The response includes nearby recent reports, and `possibleDuplicateOf` points to the nearest match. Lint, build, and live Atlas tests for nearby, distant, and older reports passed; temporary reports were removed and the incident count returned to 3. The change awaits a separate PR.
 - [x] 3.2 Hospital and shelter capacity updated on dispatch in the same transaction as unit and plan changes. One place is reserved per assignment. Lint, build, and live Atlas tests for both destination kinds and a full-capacity conflict passed; temporary records were removed and counts returned to 3 incidents, 26 resources, and 0 plans. The change awaits a separate PR.
-- [ ] 3.3 `docs/demo-script.md`: exact inputs and clicks for the 3-minute demo
-- [ ] 3.4 Tune seed data so the demo really runs out of units at the escalation step
-- [ ] 3.5 Test every edge case from the Round 1 doc, report bugs to the owner
+- [x] 3.3 `docs/demo-script.md` (done by Ashish): minute-by-minute clicks, inputs and talking points using the real UI labels (Generate Plan, Approve & Dispatch, Report Emergency, Fleet -> Unavailable, Incidents -> answer), a pre-demo checklist (reset with `curl -X POST .../api/seed`), recovery steps, and which edge case each step shows
+- [x] 3.4 Seed tuning (done by Ashish): `scripts/generate_seed_data.py` now also starts FIR-03 unavailable, so only FIR-01 and FIR-02 are free. When two fires are reported after the first dispatch, one always escalates ("No free fire unit; nearest busy one about 29-48 min"). Regenerated `data/resources.json` (only FIR-03 changed)
+- [x] 3.5 Edge cases (done by Ashish): full demo story rehearsed via the API on the separate `rakshanet_test` DB, 3 runs in a row, 36/36 checks passed: first plan + dispatch, escalation on the second fire, ambulance breakdown -> replan replaces only it with the real reason, vague report -> needs_info -> answered -> reassessed and planned, duplicate flagged, all units cleared -> resolved. No new bugs. NOTE: the Round 1 doc is not in the repo; the 6 cases used are the ones in the demo script's edge-case table, check them against the real doc
 
 **Gate 3 (FEATURE FREEZE)**
 - [ ] Demo script runs 3 times in a row on the live link with no failure
@@ -72,12 +73,12 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 - [ ] 4.1 Sleep in shifts, one person always awake
 - [ ] 4.2 Bug fixes only, through PRs
-- [ ] 4.3 README setup steps
+- [x] 4.3 README Setup section (done by Ashish): clone, install, `.env.local` values, reset data, run, test on a separate DB
 - [ ] 4.4 Final checklist, submit by 6:30 AM
 
 ## Blockers
 
-- Gate 2 still needs a live report-to-dispatch demonstration. In merged frontend code, the "Approve & Dispatch" handlers call approval but do not call `dispatchPlan`. Phase 3 changes and the responder status fix need a separate PR.
+- Gate 2 still needs the team's live report-to-dispatch check. The "Approve & Dispatch" bug Sam reported is FIXED by Daksh (PlanPanel now approves then dispatches) and merged into `main`.
 
 ## Notes
 

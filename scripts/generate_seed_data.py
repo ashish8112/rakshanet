@@ -39,7 +39,9 @@ RESOURCE_GROUPS = (
 
 HOSPITAL_CAPACITIES = ((32, 18), (45, 38), (28, 12), (36, 20), (50, 46), (24, 8))
 SHELTER_CAPACITIES = ((80, 31), (60, 48), (45, 12), (70, 55))
-UNAVAILABLE_CODES = {"AMB-08", "FIR-04"}
+# FIR-03 starts unavailable too (demo tuning, step 3.4): only 2 fire units are free, so when two
+# new fires are reported after the first dispatch, one of them must escalate with a wait time.
+UNAVAILABLE_CODES = {"AMB-08", "FIR-03", "FIR-04"}
 
 
 def location(area, index=0):
