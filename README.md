@@ -16,7 +16,7 @@ Built in 24 hours by team **CodeStorm** (Ashish, Daksh, Sam) for the Agentic AI 
 
 The control room is behind a sign-in, because in real use only dispatchers may report emergencies and send vehicles.
 
-- **Judges:** the password is in our hackathon submission. Sign in with your own name (it appears in the History log) and that password.
+- **Judges:** sign in at https://rakshanet-three.vercel.app with your own name (it appears in the History log) and the password **`rakshak@digital5600`**. This password is for judging day only and will be changed after the evaluation.
 - **Everyone else:** watch the [video tutorial](https://rakshanet-three.vercel.app/tutorial), or run it yourself (see [Setup](#setup)).
 
 A 2-minute tour once you are in:
