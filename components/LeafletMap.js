@@ -1,7 +1,8 @@
 // Owner: Daksh
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useMemo, useSyncExternalStore } from "react";
+import { getNearestResponders } from "@/components/geo";
 import {
   MapContainer,
   TileLayer,
@@ -14,7 +15,7 @@ import {
 import L from "leaflet";
 
 // Component to handle map clicks and fly-to interactions
-function MapEventHandler({ onMapClick, selectedLocation }) {
+function MapEventHandler({ onMapClick, selectedLocation, pendingLocation }) {
   const map = useMap();
 
   useMapEvents({
@@ -28,16 +29,19 @@ function MapEventHandler({ onMapClick, selectedLocation }) {
     },
   });
 
+  const target = pendingLocation || selectedLocation;
+
   useEffect(() => {
-    if (selectedLocation?.lat && selectedLocation?.lng) {
-      map.flyTo([selectedLocation.lat, selectedLocation.lng], 14, {
-        duration: 1.2,
+    if (target?.lat && target?.lng) {
+      map.flyTo([target.lat, target.lng], 14, {
+        duration: 1.0,
       });
     }
-  }, [selectedLocation, map]);
+  }, [target?.lat, target?.lng, map]);
 
   return null;
 }
+
 
 // Custom HTML Pin Generators matching Uber's aesthetic
 const createIncidentIcon = (severity, type, isSelected) => {
@@ -147,15 +151,23 @@ export default function LeafletMap({
   resources = [],
   currentPlan = null,
   selectedIncident = null,
+  pendingLocation = null,
   onSelectIncident = () => {},
   onSelectResource = () => {},
   onMapClick = () => {},
+  onRequestRescue = null,
 }) {
   const isMounted = useSyncExternalStore(
     emptySubscribe,
     () => true,
     () => false
   );
+
+  const nearestToPending = useMemo(() => {
+    if (!pendingLocation?.lat || !pendingLocation?.lng) return null;
+    const list = getNearestResponders(pendingLocation, resources);
+    return list[0] || null;
+  }, [pendingLocation, resources]);
 
   if (!isMounted) {
     return (
@@ -212,7 +224,9 @@ export default function LeafletMap({
         <MapEventHandler
           onMapClick={onMapClick}
           selectedLocation={selectedIncident?.location}
+          pendingLocation={pendingLocation}
         />
+
 
         {/* Dynamic Assignment Route Vectors */}
         {routeLines.map((line) => (
@@ -238,6 +252,67 @@ export default function LeafletMap({
             </Popup>
           </Polyline>
         ))}
+
+        {/* Live Vector Line to Selected Rescue Target */}
+        {pendingLocation && nearestToPending?.resource?.location && (
+          <Polyline
+            positions={[
+              [nearestToPending.resource.location.lat, nearestToPending.resource.location.lng],
+              [pendingLocation.lat, pendingLocation.lng],
+            ]}
+            pathOptions={{
+              color: "#e11900",
+              weight: 4,
+              dashArray: "4, 6",
+              opacity: 0.9,
+            }}
+          />
+        )}
+
+        {/* Selected Rescue Location Pin */}
+        {pendingLocation?.lat && pendingLocation?.lng && (
+          <Marker
+            position={[pendingLocation.lat, pendingLocation.lng]}
+            icon={L.divIcon({
+              className: "custom-pending-pin",
+              html: `
+                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+                  <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: #e11900; opacity: 0.35; animation: uber-pulse 1.5s infinite;"></div>
+                  <div style="width: 36px; height: 36px; background: #000000; border: 3px solid #e11900; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.35);">
+                    📍
+                  </div>
+                </div>
+              `,
+              iconSize: [44, 44],
+              iconAnchor: [22, 22],
+            })}
+          >
+            <Popup autoPan={false}>
+              <div className="p-2 text-xs font-sans">
+                <div className="font-extrabold text-black mb-1">
+                  🚨 Rescue Target Location
+                </div>
+                {nearestToPending ? (
+                  <div className="text-neutral-700">
+                    Nearest Unit: <strong>{nearestToPending.resource.name}</strong><br />
+                    ETA: <strong className="text-red-600">~{nearestToPending.etaMinutes} mins</strong> ({nearestToPending.distanceKm} km)
+                    {onRequestRescue && (
+                      <button
+                        onClick={() => onRequestRescue(pendingLocation)}
+                        className="mt-2 w-full py-1.5 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-[11px] shadow transition flex items-center justify-center gap-1.5"
+                      >
+                        <span>🚨</span>
+                        <span>Request Rescue Here (~{nearestToPending.etaMinutes} min)</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-neutral-500">Calculating nearest responder...</div>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* Resources Markers */}
         {resources.map((res) => {

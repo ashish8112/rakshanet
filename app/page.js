@@ -6,6 +6,11 @@ import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ReportModal from "@/components/ReportModal";
 import { getIncidents, getResources, getCurrentPlan } from "@/components/api";
+import {
+  getAreaName,
+  getNearestResponders,
+  BENGALURU_HUBS,
+} from "@/components/geo";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
   ssr: false,
@@ -57,14 +62,30 @@ export default function HomeDashboardPage() {
     };
   }, []);
 
-  // Handle map click: immediately capture clicked coordinates and open rescue demand modal
+  // Handle direct map click: resolve human-readable area & calculate live ETA
   const handleMapClick = (coords) => {
+    const area = getAreaName(coords);
     setClickedLocation({
       lat: coords.lat,
       lng: coords.lng,
-      area: "Pinned Map Location",
+      area,
     });
-    setIsReportModalOpen(true);
+  };
+
+  // Find nearest responder and estimated time to arrival for pinned location
+  const nearestResponderToPin = useMemo(() => {
+    if (!clickedLocation?.lat || !clickedLocation?.lng) return null;
+    const list = getNearestResponders(clickedLocation, resources);
+    return list[0] || null;
+  }, [clickedLocation, resources]);
+
+  // Handle selecting a predefined hub
+  const handleSelectHub = (hub) => {
+    setClickedLocation({
+      lat: hub.lat,
+      lng: hub.lng,
+      area: hub.name,
+    });
   };
 
   // Filtered incidents based on search query
@@ -80,6 +101,16 @@ export default function HomeDashboardPage() {
     );
   }, [incidents, searchQuery]);
 
+  // Suggested hubs matching search input
+  const matchingHubs = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return BENGALURU_HUBS.filter((h) => h.name.toLowerCase().includes(q)).slice(
+      0,
+      4
+    );
+  }, [searchQuery]);
+
   const activeCount = incidents.filter((i) => i.status !== "resolved").length;
   const readyUnits = resources.filter((r) => r.status === "available").length;
 
@@ -88,7 +119,6 @@ export default function HomeDashboardPage() {
       {/* Top Multi-Page Navigation Bar */}
       <Navbar
         onOpenReport={() => {
-          setClickedLocation(null);
           setIsReportModalOpen(true);
         }}
         onRefresh={loadData}
@@ -103,6 +133,7 @@ export default function HomeDashboardPage() {
             resources={resources}
             currentPlan={currentPlan}
             selectedIncident={selectedIncident}
+            pendingLocation={clickedLocation}
             onSelectIncident={(inc) => {
               setSelectedIncident(inc);
               setSelectedResource(null);
@@ -112,94 +143,188 @@ export default function HomeDashboardPage() {
               setSelectedIncident(null);
             }}
             onMapClick={handleMapClick}
+            onRequestRescue={(loc) => {
+              setClickedLocation(loc);
+              setIsReportModalOpen(true);
+            }}
           />
         </div>
 
         {/* Floating Uber-Style Rescue Request & Search Card */}
         <div className="absolute top-5 left-5 z-20 w-80 sm:w-96 bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-neutral-200/80 font-sans">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                Bengaluru Live Rescue
-              </span>
-              <h1 className="text-lg font-extrabold text-black tracking-tight mt-1">
-                Where do you need rescue?
-              </h1>
-            </div>
-            <div className="w-9 h-9 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-md">
-              📍
-            </div>
-          </div>
-
-          {/* Search Location Input */}
-          <div className="relative mb-3">
-            <div className="bg-neutral-100 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 border border-neutral-200 focus-within:border-black transition">
-              <span className="text-neutral-400 text-sm">🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search area (Koramangala, Indiranagar...)"
-                className="w-full bg-transparent text-xs font-semibold text-black placeholder:text-neutral-400 focus:outline-none"
-              />
-              {searchQuery && (
+          {clickedLocation ? (
+            /* PINNED RESCUE LOCATION STATE (Live ETA & Submit) */
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+                  Live Rescue Target Selected
+                </span>
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-neutral-400 hover:text-black text-xs font-bold"
+                  onClick={() => setClickedLocation(null)}
+                  className="text-neutral-400 hover:text-black text-xs font-bold px-2 py-0.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 transition"
                 >
-                  ✕
+                  ✕ Clear Pin
                 </button>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Big One-Click Request Button */}
-          <button
-            onClick={() => {
-              setClickedLocation(null);
-              setIsReportModalOpen(true);
-            }}
-            className="w-full py-3 rounded-full bg-black hover:bg-neutral-800 active:scale-95 text-white font-bold text-xs shadow-xl transition flex items-center justify-center gap-2 mb-3"
-          >
-            <span>🚨</span>
-            <span>Request Immediate Emergency Rescue</span>
-          </button>
+              <div>
+                <h2 className="text-base font-extrabold text-black tracking-tight">
+                  {clickedLocation.area}
+                </h2>
+                <p className="text-[11px] font-mono text-neutral-500">
+                  {clickedLocation.lat.toFixed(4)}, {clickedLocation.lng.toFixed(4)}
+                </p>
+              </div>
 
-          {/* Quick Action Chips */}
-          <div className="grid grid-cols-2 gap-2 text-[11px] font-semibold">
-            <button
-              onClick={() => {
-                setClickedLocation(null);
-                setIsReportModalOpen(true);
-              }}
-              className="py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-left flex items-center gap-2 transition"
-            >
-              <span>🚑</span>
-              <span>Ambulance</span>
-            </button>
-            <button
-              onClick={() => {
-                setClickedLocation(null);
-                setIsReportModalOpen(true);
-              }}
-              className="py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-left flex items-center gap-2 transition"
-            >
-              <span>🌊</span>
-              <span>Flood Rescue</span>
-            </button>
-          </div>
+              {/* Real-time Estimated Time Callout Card */}
+              <div className="bg-neutral-900 text-white rounded-2xl p-4 shadow-lg border border-neutral-800">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                    Estimated Arrival Time
+                  </span>
+                  <span className="text-xs">⏱️</span>
+                </div>
+                <div className="text-3xl font-black tracking-tight text-white mb-1">
+                  ~{nearestResponderToPin ? nearestResponderToPin.etaMinutes : 5} MINS
+                </div>
+                <p className="text-xs text-neutral-300 leading-snug">
+                  {nearestResponderToPin ? (
+                    <>
+                      <strong>{nearestResponderToPin.resource.name}</strong> is standing by (
+                      {nearestResponderToPin.distanceKm} km away)
+                    </>
+                  ) : (
+                    "Nearest emergency rapid unit standing by"
+                  )}
+                </p>
+              </div>
 
-          {/* Real-time Status Badges */}
-          <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] font-semibold text-neutral-600">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-              <span>{activeCount} Active Calls</span>
+              {/* Big Direct Submit Rescue Button */}
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="w-full py-3.5 rounded-full bg-red-600 hover:bg-red-500 active:scale-95 text-white font-extrabold text-xs shadow-xl shadow-red-900/30 transition flex items-center justify-center gap-2 border border-red-500"
+              >
+                <span>🚨</span>
+                <span>
+                  Submit Rescue Service (~
+                  {nearestResponderToPin ? nearestResponderToPin.etaMinutes : 5} min ETA)
+                </span>
+              </button>
+
+              <p className="text-[11px] text-center text-neutral-500 font-medium">
+                Tap anywhere else on the map to adjust rescue location
+              </p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{readyUnits} Ready Units</span>
+          ) : (
+            /* DEFAULT SEARCH / MAP SELECTION STATE */
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                    Bengaluru Live Rescue
+                  </span>
+                  <h1 className="text-lg font-extrabold text-black tracking-tight mt-1">
+                    Where do you need rescue?
+                  </h1>
+                </div>
+                <div className="w-9 h-9 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-md">
+                  📍
+                </div>
+              </div>
+
+              {/* Search Location Input */}
+              <div className="relative mb-3">
+                <div className="bg-neutral-100 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 border border-neutral-200 focus-within:border-black transition">
+                  <span className="text-neutral-400 text-sm">🔍</span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search area (Koramangala, Indiranagar...)"
+                    className="w-full bg-transparent text-xs font-semibold text-black placeholder:text-neutral-400 focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-neutral-400 hover:text-black text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Autocomplete Hub Suggestions */}
+                {matchingHubs.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-xl border border-neutral-200 overflow-hidden z-30">
+                    {matchingHubs.map((hub) => (
+                      <button
+                        key={hub.name}
+                        onClick={() => {
+                          handleSelectHub(hub);
+                          setSearchQuery("");
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-semibold hover:bg-neutral-50 flex items-center justify-between border-b last:border-b-0 border-neutral-100"
+                      >
+                        <span className="text-black">📍 {hub.name}</span>
+                        <span className="text-[10px] text-neutral-400">Select & Get ETA</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Area Chips for 1-Click Location Pinning */}
+              <div className="mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
+                  Or select popular area:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px] font-semibold">
+                  {BENGALURU_HUBS.slice(0, 4).map((hub) => (
+                    <button
+                      key={hub.name}
+                      onClick={() => handleSelectHub(hub)}
+                      className="py-1.5 px-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-left truncate transition flex items-center gap-1.5"
+                    >
+                      <span>📍</span>
+                      <span className="truncate">{hub.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Big Request Button */}
+              <button
+                onClick={() => {
+                  setClickedLocation(null);
+                  setIsReportModalOpen(true);
+                }}
+                className="w-full py-3 rounded-full bg-black hover:bg-neutral-800 active:scale-95 text-white font-bold text-xs shadow-xl transition flex items-center justify-center gap-2 mb-3"
+              >
+                <span>🚨</span>
+                <span>Request Immediate Emergency Rescue</span>
+              </button>
+
+              {/* Map Selection Instructions Pill */}
+              <div className="bg-neutral-50 rounded-2xl p-2.5 border border-neutral-200 text-center">
+                <p className="text-[11px] font-semibold text-neutral-700">
+                  💡 Click anywhere on the map to set rescue pin & view ETA
+                </p>
+              </div>
+
+              {/* Real-time Status Badges */}
+              <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between text-[11px] font-semibold text-neutral-600">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                  <span>{activeCount} Active Incidents</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>{readyUnits} Ready Units</span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Selected Incident / Unit Floating Inspector Card */}
@@ -235,7 +360,7 @@ export default function HomeDashboardPage() {
 
         {/* Map Tip Pill */}
         <div className="absolute bottom-6 right-5 z-10 bg-black/85 backdrop-blur-md text-white text-xs font-medium px-4 py-2 rounded-full shadow-2xl border border-neutral-800 pointer-events-none hidden sm:flex items-center gap-2">
-          <span>💡 Click anywhere on the map to drop a rescue pin</span>
+          <span>💡 Click anywhere on the map to drop a rescue pin & calculate ETA</span>
         </div>
       </main>
 
@@ -244,9 +369,11 @@ export default function HomeDashboardPage() {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         initialLocation={clickedLocation}
+        resources={resources}
         onSuccess={(newIncident) => {
           loadData();
           setSelectedIncident(newIncident);
+          setClickedLocation(null);
         }}
       />
     </div>
