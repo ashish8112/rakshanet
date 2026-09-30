@@ -2,9 +2,9 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 0
-**Next step:** 0.4 (tell the team), 0.5 (Vercel deploy), then 0.6 (create `backend-agents`)
-**Branch:** main (own branch `backend-agents` not created yet)
+**Current phase:** 1 (Phase 0 team handoff and deployment still need Ashish)
+**Next step:** 1.5 (live assessments for 3 reports and Phase 1 PR review/merge)
+**Branch:** backend-agents (local worktree; remote branch not pushed yet)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
 
@@ -26,10 +26,10 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 1: Foundations (2:00 PM to 4:30 PM)
 
-- [ ] 1.1 `lib/agents/gemini.js`: call Gemini, JSON only, safe parse, retry once on bad JSON
-- [ ] 1.2 `lib/agents/stubTools.js`: fake versions of every tool in CONTRACT.md 5.3 (same names, same shapes, 24-hex ids)
-- [ ] 1.3 Incident Assessment agent + prompt, output as CONTRACT.md 5.4, AgentLog for every step
-- [ ] 1.4 Orchestrator v1 (assessment only) + `POST /api/plan/generate` returning a plan with empty assignments
+- [x] 1.1 `lib/agents/gemini.js`: JSON-only Gemini call, safe parse, one retry on bad JSON (controlled test passed)
+- [x] 1.2 `lib/agents/stubTools.js`: all 7 contract-named fake tools with contract-shaped outputs and 24-hex ids
+- [x] 1.3 Incident Assessment agent + prompt: exact contract output validation; orchestrator writes an AgentLog for each successful assessment (controlled tests passed)
+- [x] 1.4 Orchestrator v1 + `POST /api/plan/generate`: proposed plan with empty assignments and response envelope (controlled tests and production build passed)
 - [ ] 1.5 Test with 3 sample incidents (clear, vague, very severe), all valid JSON, PR merged
 
 **Gate 1 (whole team)**
@@ -73,7 +73,9 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Blockers
 
-- (none)
+- Live Phase 1 test is pending: configured Gemini model returned 503 high demand on two assessment attempts. No shared Atlas collections were changed by these attempts.
+- Production build passes using Next's local font mock because this environment cannot reach Google Fonts. Normal build still needs a networked environment.
+- `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
 
