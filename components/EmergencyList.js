@@ -88,10 +88,10 @@ function EmergencyCard({ incident, incidents, selected, onSelect, onAnswered }) 
 
 export default function EmergencyList({ incidents, selectedId, onSelect, onNew, onAnswered }) {
   const [showResolved, setShowResolved] = useState(false);
-  const open = incidents
-    .filter((i) => i.status !== "resolved")
-    .sort((a, b) => (b.status === "needs_info") - (a.status === "needs_info") || (b.severity ?? 0) - (a.severity ?? 0));
-  const resolved = incidents.filter((i) => i.status === "resolved");
+  // Newest report always on top.
+  const newestFirst = (a, b) => new Date(b.reportedAt) - new Date(a.reportedAt);
+  const open = incidents.filter((i) => i.status !== "resolved").sort(newestFirst);
+  const resolved = incidents.filter((i) => i.status === "resolved").sort(newestFirst);
   const shown = showResolved ? resolved : open;
 
   return (
