@@ -21,7 +21,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 **Gate 0 (whole team)**
 - [ ] All 3 laptops show the app at `localhost:3000`
 - [x] Vercel live link opens
-- [ ] 3 branches exist on GitHub
+- [x] 3 branches exist on GitHub
 - [ ] Everyone has read `CONTRACT.md` and has no open questions
 
 ## Phase 1: Foundations (2:00 PM to 4:30 PM)
@@ -33,7 +33,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 1.5 Tested 3 incidents (clear flood sev 4 high, vague 'market' sev 1 low + follow-up questions, building collapse sev 5 high): all valid contract JSON, 2 runs each, ~1-2 s. Fixed on the way: Gemini helper retries on 'high demand'/429/503 and on wrong-shape output; assessment drops extra keys Gemini adds (e.g. `location`). Model: `gemini-3.5-flash-lite` (Flash models were overloaded).
 
 **Gate 1 (whole team)**
-- [ ] All Phase 1 PRs merged into `main`
+- [x] All Phase 1 PRs merged into `main`
 - [ ] Report form saves a real incident to MongoDB
 - [ ] Map shows the real seeded resources (not mock)
 - [x] Assessment agent returns valid JSON for all 3 test incidents
@@ -50,7 +50,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
 - [ ] `POST /api/seed` resets everything for a clean demo
-- [ ] Everyone's work is merged; nothing important lives only on a laptop
+- [x] Everyone's work is merged; nothing important lives only on a laptop (all 3 branches merged into main, 30 Sep evening)
 
 ## Phase 3: Replanning, edge cases, polish (8:00 PM to 1:00 AM)
 

@@ -170,7 +170,7 @@
       "lng": 77.5718,
       "area": "Malleshwaram"
     },
-    "status": "available",
+    "status": "unavailable",
     "capabilities": [
       "fire",
       "rescue"
