@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 3
-**Next step:** 3.4 (prompt tuning so summaries read clearly to a non-technical judge)
+**Next step:** Gate 3 with the team (demo script 3x on the live link, edge cases), then Phase 4 (README technical part, demo voice)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -57,7 +57,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 3.1 Replanning only what changed: allocation sees units already on scene (fills only missing capabilities) and the previous plan's units (keeps them unless needed elsewhere); reopened incidents still fully covered go back to `dispatched`; Command agent is told what triggered the replan so `changes[].why` names the real cause. Tested: AMB-03 breaks down on INC-003 -> v2 = only AMB-04 -> INC-003, why "AMB-03 is now unavailable", ~3 s
 - [x] 3.2 Investigate loop: vague incident -> `needs_info` + question (done in 2.4). Fixed: only low-confidence, severity <= 3 incidents with no units may be investigated; severe ones get units now and keep their follow-up questions
 - [x] 3.3 Escalation: incidents still missing a capability are `uncovered` with reason + `expectedDelayMinutes` (nearest busy capable unit: 20 min on scene + tools ETA), logged as "Escalation" in the timeline. Coverage check: after Gemini, code gives any unmet need the nearest free unused unit (8 -> 14 assignments in a 8-incident shortage test). Allocation repairs bad Gemini output instead of failing; retries tell Gemini what was wrong; 4 Gemini tries with backoff
-- [ ] 3.4 Prompt tuning so reasons and summaries read clearly to a non-technical judge
+- [x] 3.4 Prompt tuning: summary max 2 sentences / 45 words (longer ones are sent back to Gemini), leads with top priority by label ("building collapse in Indiranagar"), then the biggest shortage with its wait; unit reasons max 15 words with real km from tools; alternatives with minutes; clear message when a replan needs no new units. Gemini 429 per-minute limit (free tier 15/min): retries now wait Google's `retryDelay` (max 20 s)
 
 **Gate 3 (FEATURE FREEZE)**
 - [ ] Demo script runs 3 times in a row on the live link with no failure
@@ -78,6 +78,8 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
+
+- Gemini free tier = 15 requests/minute per model for the whole app (Vercel uses Ashish's key). One plan = ~3 calls + 1 per new incident. Avoid clicking Generate Plan repeatedly during the demo.
 
 - Sam's `responders/update` must reopen an incident (`planned`) when a unit goes `unavailable`, or replanning never covers it. Fix written by Ashish, kept in a local git stash on `backend-data` (not pushed); waiting to hear from Sam.
 
