@@ -22,7 +22,7 @@ function conflictResponse(conflicts) {
   return NextResponse.json({ ok: true, data: { committed: false, conflicts, replanNeeded: true } });
 }
 
-function checkLatestAssignments(assignments, resources, incidents, destinations) {
+function checkLatestAssignments(assignments, resources, incidents, destinations, anyCapability = false) {
   const resourceById = new Map(resources.map((resource) => [String(resource.id), resource]));
   const incidentById = new Map(incidents.map((incident) => [String(incident.id), incident]));
   const destinationById = new Map(destinations.map((destination) => [String(destination.id), destination]));
@@ -42,9 +42,9 @@ function checkLatestAssignments(assignments, resources, incidents, destinations)
     if (!resource || resource.status !== "available" || resource.assignedIncident || !MOBILE_KINDS.has(resource.kind)) {
       conflicts.push({ resourceId, reason: "Resource is missing or no longer available" });
     }
-    if (!incident || ["dispatched", "resolved", "cancelled"].includes(incident.status)) {
-      conflicts.push({ resourceId, reason: "Incident is missing or already dispatched or resolved" });
-    } else if (resource && incident.requiredCapabilities.length > 0 &&
+    if (!incident || ["resolved", "cancelled"].includes(incident.status)) {
+      conflicts.push({ resourceId, reason: "Incident is missing, resolved or cancelled" });
+    } else if (!anyCapability && resource && incident.requiredCapabilities.length > 0 &&
         !incident.requiredCapabilities.some((capability) => resource.capabilities.includes(capability))) {
       conflicts.push({ resourceId, reason: "Resource lacks a capability required by the incident" });
     }
@@ -84,7 +84,8 @@ export async function POST(request) {
       return errorResponse("EMPTY_PLAN", "Could not dispatch the plan; it has no resource assignments.", 409);
     }
 
-    const validation = await validateAssignments(plan.assignments);
+    const manual = plan.source === "manual"; // the dispatcher chose these vehicles by hand
+    const validation = await validateAssignments(plan.assignments, { anyCapability: manual });
     if (!validation.valid) return conflictResponse(validation.conflicts);
 
     let committedPlan;
@@ -100,7 +101,7 @@ export async function POST(request) {
       const resources = await Resource.find({ _id: { $in: resourceIds } }).session(session);
       const incidents = await Incident.find({ _id: { $in: incidentIds } }).session(session);
       const destinations = await Resource.find({ _id: { $in: destinationIds } }).session(session);
-      const conflicts = checkLatestAssignments(assignments, resources, incidents, destinations);
+      const conflicts = checkLatestAssignments(assignments, resources, incidents, destinations, manual);
       if (conflicts.length > 0) throw new DispatchConflict(conflicts);
 
       const incidentResources = new Map();
@@ -121,7 +122,7 @@ export async function POST(request) {
       }
       for (const [incidentId, ids] of incidentResources) {
         const update = await Incident.updateOne(
-          { _id: incidentId, status: { $nin: ["dispatched", "resolved", "cancelled"] } },
+          { _id: incidentId, status: { $nin: ["resolved", "cancelled"] } },
           { $set: { status: "dispatched" }, $addToSet: { assignedResources: { $each: ids } } },
           { session }
         );

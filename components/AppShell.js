@@ -24,7 +24,24 @@ const STEPS = [
   ["🕒", "History", "Every report, plan, decision and crew update is kept with who did it and when."],
 ];
 
-export function HelpDialog({ onClose }) {
+// The tutorial video (public/tutorial.mp4), in a simple player window.
+export function VideoDialog({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0f172a]/70 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3">
+          <p className="font-semibold text-slate-900">▶ How to use RakshaNet — video tutorial</p>
+          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+        </div>
+        <video src="/tutorial.mp4" poster="/tutorial.jpg" controls autoPlay playsInline className="aspect-video w-full bg-black">
+          Your browser cannot play this video.
+        </video>
+      </div>
+    </div>
+  );
+}
+
+export function HelpDialog({ onClose, onWatch }) {
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0f172a]/40 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -46,7 +63,10 @@ export function HelpDialog({ onClose }) {
             </li>
           ))}
         </ol>
-        <button onClick={onClose} className="mt-6 w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700">Got it</button>
+        <div className="mt-6 flex gap-2">
+          {onWatch && <button onClick={onWatch} className="flex-1 rounded-xl py-3 font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 hover:bg-blue-50">▶ Watch the video</button>}
+          <button onClick={onClose} className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700">Got it</button>
+        </div>
       </div>
     </div>
   );
@@ -56,6 +76,7 @@ export default function AppShell({ data, children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const { userName, loadError, load } = data;
 
   const logout = async () => {
@@ -87,6 +108,9 @@ export default function AppShell({ data, children }) {
         <div className="flex shrink-0 items-center gap-1.5">
           <CopilotBell data={data} />
           <ThemeButton />
+          <button onClick={() => setShowVideo(true)} className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+            ▶<span className="hidden sm:inline"> Watch video</span>
+          </button>
           <button onClick={() => setShowHelp(true)} className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
             ❔<span className="hidden sm:inline"> How it works</span>
           </button>
@@ -117,7 +141,8 @@ export default function AppShell({ data, children }) {
         ))}
       </nav>
 
-      {showHelp && <HelpDialog onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpDialog onClose={() => setShowHelp(false)} onWatch={() => { setShowHelp(false); setShowVideo(true); }} />}
+      {showVideo && <VideoDialog onClose={() => setShowVideo(false)} />}
     </div>
   );
 }

@@ -27,6 +27,7 @@ export async function proxy(request) {
 }
 
 export const config = {
-  // Everything except Next.js build files and static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Everything except Next.js build files and static assets
+  // (the tutorial video and its poster are public so it can be shown before signing in).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4)$).*)"],
 };

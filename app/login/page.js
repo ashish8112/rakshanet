@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { signIn } from "@/components/api";
 import { Button, ErrorNote } from "@/components/ui";
 import { ThemeButton } from "@/components/theme";
+import { VideoDialog } from "@/components/AppShell";
 
 function LoginForm() {
   const params = useSearchParams();
@@ -60,6 +61,7 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const [showVideo, setShowVideo] = useState(false);
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50 px-4 py-10">
       <ThemeButton className="absolute right-4 top-4" />
@@ -83,6 +85,12 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-400">
           AI suggests plans. You approve every decision.
         </p>
+        <p className="mt-3 text-center">
+          <button type="button" onClick={() => setShowVideo(true)} className="text-sm font-medium text-blue-700 underline underline-offset-4 hover:text-blue-800">
+            ▶ Watch the demo video
+          </button>
+        </p>
+        {showVideo && <VideoDialog onClose={() => setShowVideo(false)} />}
       </div>
     </main>
   );
