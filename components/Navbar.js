@@ -4,36 +4,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { seedDatabase } from "@/components/api";
-
 export default function Navbar({ onOpenReport = () => {}, onRefresh = () => {} }) {
   const pathname = usePathname();
   const [time, setTime] = useState("");
-  const [seeding, setSeeding] = useState(false);
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSeed = async () => {
-    if (seeding) return;
-    setSeeding(true);
-    await seedDatabase();
-    await onRefresh();
-    setSeeding(false);
-  };
 
   const navLinks = [
     { href: "/", label: "Live Map", icon: "🗺️" },
@@ -94,14 +67,6 @@ export default function Navbar({ onOpenReport = () => {}, onRefresh = () => {} }
           <span>{time || "18:40 PM"} IST</span>
         </div>
 
-        {/* Seed Reset */}
-        <button
-          onClick={handleSeed}
-          disabled={seeding}
-          className="hidden md:inline-flex px-3.5 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white text-xs font-medium border border-neutral-800 transition active:scale-95 disabled:opacity-50"
-        >
-          {seeding ? "Resetting..." : "Reset Data"}
-        </button>
 
         {/* Big Black Action Pill */}
         <button

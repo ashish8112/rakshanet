@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { USE_MOCK, seedDatabase } from "@/components/api";
+import { USE_MOCK } from "@/components/api";
 
 export default function UberTopBar({
   incidents = [],
@@ -13,7 +13,6 @@ export default function UberTopBar({
   onRefresh = () => {},
 }) {
   const [query, setQuery] = useState("");
-  const [seeding, setSeeding] = useState(false);
   const [time, setTime] = useState("");
 
   useEffect(() => {
@@ -31,14 +30,6 @@ export default function UberTopBar({
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleSeed = async () => {
-    if (seeding) return;
-    setSeeding(true);
-    await seedDatabase();
-    await onRefresh();
-    setSeeding(false);
-  };
 
   const criticalCount = incidents.filter(
     (i) => i.severity === 5 || i.severity === 4
@@ -124,14 +115,6 @@ export default function UberTopBar({
           )}
         </div>
 
-        {/* Reset Data */}
-        <button
-          onClick={handleSeed}
-          disabled={seeding}
-          className="hidden md:inline-flex items-center px-3.5 py-2 rounded-full bg-white/95 hover:bg-white text-neutral-800 text-xs font-semibold shadow-lg border border-neutral-200/80 transition active:scale-95 disabled:opacity-50"
-        >
-          {seeding ? "Resetting..." : "Reset"}
-        </button>
 
         {/* Black Pill Report Button (Uber signature) */}
         <button
