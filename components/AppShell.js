@@ -2,12 +2,13 @@
 // Phones get the page links as a bottom bar.
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/components/api";
 import CopilotBell from "@/components/CopilotBell";
 import { ThemeButton } from "@/components/theme";
+import TutorialPlayer from "@/components/TutorialPlayer";
 
 const PAGES = [
   ["/", "🚨", "Control room"],
@@ -24,72 +25,16 @@ const STEPS = [
   ["🕒", "History", "Every report, plan, decision and crew update is kept with who did it and when."],
 ];
 
-// The tutorial video with an English or Hindi voice-over (public/tutorial.mp4, public/tutorial-hi.mp4).
-const VIDEO_LANGS = [
-  ["en", "English", "/tutorial.mp4"],
-  ["hi", "हिंदी", "/tutorial-hi.mp4"],
-];
-
-function savedVideoLang() {
-  try {
-    return localStorage.getItem("rn-video-lang") === "hi" ? "hi" : "en";
-  } catch {
-    return "en";
-  }
-}
-
+// The tutorial video (English or Hindi voice-over) in a simple player window.
 export function VideoDialog({ onClose }) {
-  const [lang, setLang] = useState(savedVideoLang);
-  const resumeAt = useRef(0);
-  const videoRef = useRef(null);
-
-  function switchLang(next) {
-    if (next === lang) return;
-    // Carry on from the same moment in the other language.
-    resumeAt.current = videoRef.current ? videoRef.current.currentTime : 0;
-    setLang(next);
-    try {
-      localStorage.setItem("rn-video-lang", next);
-    } catch {}
-  }
-
-  const src = VIDEO_LANGS.find(([code]) => code === lang)[2];
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0f172a]/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+        <div className="flex items-center justify-between px-5 py-3">
           <p className="font-semibold text-slate-900">▶ How to use RakshaNet — video tutorial</p>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-full bg-slate-100 p-1 text-sm" role="group" aria-label="Voice language">
-              {VIDEO_LANGS.map(([code, label]) => (
-                <button
-                  key={code}
-                  onClick={() => switchLang(code)}
-                  aria-pressed={lang === code}
-                  className={`rounded-full px-3 py-1 font-medium ${lang === code ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
-                >
-                  🔊 {label}
-                </button>
-              ))}
-            </div>
-            <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
-          </div>
+          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
         </div>
-        <video
-          key={lang}
-          ref={videoRef}
-          src={src}
-          poster="/tutorial.jpg"
-          controls
-          autoPlay
-          playsInline
-          onLoadedMetadata={(e) => {
-            if (resumeAt.current) e.currentTarget.currentTime = resumeAt.current;
-          }}
-          className="aspect-video w-full bg-black"
-        >
-          Your browser cannot play this video.
-        </video>
+        <TutorialPlayer />
       </div>
     </div>
   );

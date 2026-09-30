@@ -4,7 +4,8 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, authEnabled, passwordMatches, readSessionToken } from "@/lib/auth";
 
-const OPEN_PATHS = ["/login", "/api/auth/"];
+// /tutorial is the public video page (the video files themselves are skipped by the matcher below).
+const OPEN_PATHS = ["/login", "/tutorial", "/api/auth/"];
 
 export async function proxy(request) {
   if (!authEnabled()) return NextResponse.next();
