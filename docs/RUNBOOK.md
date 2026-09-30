@@ -31,10 +31,10 @@ Details behind each step (data shapes, endpoints, tool functions) are in `CONTRA
 
 ### Sam
 
-- **0.1 MongoDB Atlas:** database user, Network Access `0.0.0.0/0`, get the connection string, share it privately with the team (never in the repo).
+- **0.1 MongoDB Atlas:** DONE by Ashish (database `rakshanet`). Get the connection string from Ashish privately (never in the repo).
 - **0.2 Pull `main`** after Ashish's 0.3, `npm install`, create `.env.local` from `.env.example` with real values.
 - **0.3 Vercel:** import the repo, add the 3 env variables, deploy, share the live link.
-- **0.4 Create your branch:** `git checkout -b backend-data` then `git push -u origin backend-data`.
+- **0.4 Your branch:** ALREADY EXISTS (created by Ashish). Do not use `-b`. Run `git fetch origin`, `git checkout backend-data`, `git pull`.
 
 ### Daksh
 
@@ -56,8 +56,7 @@ Details behind each step (data shapes, endpoints, tool functions) are in `CONTRA
 
 ### Sam (`backend-data`)
 
-- **1.1 DB layer:** `lib/db/connect.js` (cached connection) + Mongoose models Incident, Resource, Plan, AgentLog exactly as in `CONTRACT.md` 5.1. Open a small PR for just this, as fast as possible (Ashish needs Plan and AgentLog).
-  Done when: PR merged to `main`.
+- **1.1 DB layer:** DONE by Ashish on `backend-data` (`lib/db/`: cached connection + Incident, Resource, Plan, AgentLog). Do not rewrite it. It reaches `main` with the Phase 1 PR.
 - **1.2 Seed data:** Python script in `scripts/` that writes `data/resources.json` (about 8 ambulances, 4 fire units, 4 rescue teams, 6 hospitals with bed capacity, 4 shelters with capacity, real Bengaluru areas and coordinates). Also `data/demo-incidents.json` with the incidents from the demo story.
 - **1.3 `POST /api/seed`:** resets the database to the seed data.
 - **1.4 `GET /api/resources`** (optional `?kind=`), **`GET /api/incidents`**, **`POST /api/incidents`**.
