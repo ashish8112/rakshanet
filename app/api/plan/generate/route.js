@@ -16,8 +16,8 @@ export async function POST(request) {
     return errorResponse("INVALID_JSON", "Could not parse the plan request; check the JSON body.", 400);
   }
   if (!body || typeof body !== "object" || Array.isArray(body) || !triggers.has(body.trigger) ||
-      (body.incidentId !== undefined && (typeof body.incidentId !== "string" || !/^[0-9a-fA-F]{24}$/.test(body.incidentId))) ||
-      (body.resourceId !== undefined && (typeof body.resourceId !== "string" || !/^[0-9a-fA-F]{24}$/.test(body.resourceId)))) {
+      (body.incidentId != null && (typeof body.incidentId !== "string" || !/^[0-9a-fA-F]{24}$/.test(body.incidentId))) ||
+      (body.resourceId != null && (typeof body.resourceId !== "string" || !/^[0-9a-fA-F]{24}$/.test(body.resourceId)))) {
     return errorResponse("INVALID_PLAN_REQUEST", "Could not generate a plan; check trigger, incidentId, and resourceId.", 400);
   }
 
@@ -28,8 +28,9 @@ export async function POST(request) {
       return errorResponse(error.code, error.message, 404);
     }
     if (error.message?.startsWith("Could not call Gemini") || error.message?.startsWith("Could not parse Gemini") || error.message?.startsWith("Could not use Gemini")) {
-      return errorResponse("ASSESSMENT_ERROR", error.message, 502);
+      return errorResponse("AGENT_ERROR", error.message, 502);
     }
+    console.error("plan/generate failed:", error);
     return errorResponse("PLAN_GENERATION_ERROR", "Could not generate a plan; check the database connection and Gemini service.", 500);
   }
 }
