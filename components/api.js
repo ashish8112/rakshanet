@@ -7,7 +7,7 @@ import initialPlans from "@/mock/plans.json";
 import initialLogs from "@/mock/logs.json";
 
 // Single switch: true = use mock data in mock/, false = use real backend endpoints
-export const USE_MOCK = true;
+export const USE_MOCK = false;
 
 // In-memory mock store initialized from mock JSON files
 let mockIncidents = JSON.parse(JSON.stringify(initialIncidents));
