@@ -1,5 +1,6 @@
 // Owner: Daksh
-// Central API client for RakshaNet with single USE_MOCK switch & resilient database fallback
+// Central API client for RakshaNet with single USE_MOCK switch
+// When USE_MOCK is false, returns real backend responses directly ({ ok: true, data } or { ok: false, error })
 
 import initialIncidents from "@/mock/incidents.json";
 import initialResources from "@/mock/resources.json";
@@ -27,8 +28,19 @@ async function request(url, options = {}) {
         ...(options.headers || {}),
       },
     });
-    const json = await res.json();
-    return json;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const json = await res.json();
+      return json;
+    }
+    const text = await res.text();
+    return {
+      ok: false,
+      error: {
+        code: `HTTP_${res.status}`,
+        message: text.slice(0, 200) || `Request failed with status ${res.status}`,
+      },
+    };
   } catch (err) {
     return {
       ok: false,
@@ -40,24 +52,8 @@ async function request(url, options = {}) {
   }
 }
 
-// Detect database connection failures (e.g. unconfigured MONGODB_URI in .env.local)
-function isDbOrNetworkError(res) {
-  if (!res || !res.ok) {
-    const code = res?.error?.code;
-    return (
-      code === "DATABASE_ERROR" ||
-      code === "NETWORK_ERROR" ||
-      code === "PLAN_GENERATION_ERROR" ||
-      code === "DISPATCH_ERROR" ||
-      code === "AGENT_ERROR" ||
-      !code
-    );
-  }
-  return false;
-}
-
 // -------------------------------------------------------------
-// In-Memory Mock Helpers
+// In-Memory Mock Helpers (Active only when USE_MOCK === true)
 // -------------------------------------------------------------
 
 function getMockIncidents() {
@@ -127,116 +123,6 @@ function getMockLogs(planVersion) {
   return { ok: true, data: logs };
 }
 
-// -------------------------------------------------------------
-// Incidents API
-// -------------------------------------------------------------
-
-export async function getIncidents() {
-  if (USE_MOCK) {
-    await delay();
-    return getMockIncidents();
-  }
-  const res = await request("/api/incidents");
-  if (isDbOrNetworkError(res)) {
-    return getMockIncidents();
-  }
-  return res;
-}
-
-export async function createIncident({ type, description, location, peopleAffected = null }) {
-  if (USE_MOCK) {
-    await delay(250);
-    return createMockIncident({ type, description, location, peopleAffected });
-  }
-
-  const payload = {
-    type,
-    description: description.trim(),
-    location: {
-      lat: Number(location.lat),
-      lng: Number(location.lng),
-      area: location.area?.trim() || "Bengaluru",
-    },
-    peopleAffected: peopleAffected !== null && peopleAffected !== "" ? Number(peopleAffected) : null,
-  };
-
-  const res = await request("/api/incidents", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-  // If MongoDB connection fails (placeholder MONGODB_URI in .env.local), fallback seamlessly
-  if (isDbOrNetworkError(res)) {
-    console.warn("[RakshaNet] Live MongoDB unavailable; incident saved locally:", res.error?.message);
-    return createMockIncident(payload);
-  }
-
-  return res;
-}
-
-export async function getIncident(id) {
-  if (USE_MOCK) {
-    await delay();
-    const incident = mockIncidents.find((inc) => inc.id === id);
-    if (!incident) {
-      return { ok: false, error: { code: "NOT_FOUND", message: `Incident ${id} not found` } };
-    }
-    return { ok: true, data: { ...incident } };
-  }
-  const res = await request(`/api/incidents/${id}`);
-  if (isDbOrNetworkError(res)) {
-    const incident = mockIncidents.find((inc) => inc.id === id);
-    if (!incident) return { ok: false, error: { code: "NOT_FOUND", message: `Incident ${id} not found` } };
-    return { ok: true, data: { ...incident } };
-  }
-  return res;
-}
-
-export async function updateIncident(id, updates) {
-  if (USE_MOCK) {
-    await delay(200);
-    const index = mockIncidents.findIndex((inc) => inc.id === id);
-    if (index === -1) {
-      return { ok: false, error: { code: "NOT_FOUND", message: `Incident ${id} not found` } };
-    }
-    mockIncidents[index] = {
-      ...mockIncidents[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    return { ok: true, data: { ...mockIncidents[index] } };
-  }
-  const res = await request(`/api/incidents/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(updates),
-  });
-  if (isDbOrNetworkError(res)) {
-    const index = mockIncidents.findIndex((inc) => inc.id === id);
-    if (index !== -1) {
-      mockIncidents[index] = { ...mockIncidents[index], ...updates, updatedAt: new Date().toISOString() };
-      return { ok: true, data: { ...mockIncidents[index] } };
-    }
-  }
-  return res;
-}
-
-// -------------------------------------------------------------
-// Resources API
-// -------------------------------------------------------------
-
-export async function getResources(kind) {
-  if (USE_MOCK) {
-    await delay();
-    return getMockResources(kind);
-  }
-  const query = kind ? `?kind=${encodeURIComponent(kind)}` : "";
-  const res = await request(`/api/resources${query}`);
-  if (isDbOrNetworkError(res)) {
-    return getMockResources(kind);
-  }
-  return res;
-}
-
 function updateMockResponderHelper({ resourceId, event }) {
   const index = mockResources.findIndex((r) => r.id === resourceId);
   if (index === -1) {
@@ -284,25 +170,6 @@ function updateMockResponderHelper({ resourceId, event }) {
     },
   };
 }
-
-export async function updateResponder({ resourceId, event }) {
-  if (USE_MOCK) {
-    await delay(250);
-    return updateMockResponderHelper({ resourceId, event });
-  }
-  const res = await request("/api/responders/update", {
-    method: "POST",
-    body: JSON.stringify({ resourceId, event }),
-  });
-  if (isDbOrNetworkError(res)) {
-    return updateMockResponderHelper({ resourceId, event });
-  }
-  return res;
-}
-
-// -------------------------------------------------------------
-// Dispatch API
-// -------------------------------------------------------------
 
 function dispatchMockPlanHelper({ planId }) {
   const plan = mockPlans.find((p) => p.id === planId) || mockPlans[mockPlans.length - 1];
@@ -365,48 +232,11 @@ function dispatchMockPlanHelper({ planId }) {
   };
 }
 
-export async function dispatchPlan({ planId }) {
-  if (USE_MOCK) {
-    await delay(350);
-    return dispatchMockPlanHelper({ planId });
-  }
-  const res = await request("/api/dispatch", {
-    method: "POST",
-    body: JSON.stringify({ planId }),
-  });
-  if (isDbOrNetworkError(res)) {
-    return dispatchMockPlanHelper({ planId });
-  }
-  return res;
-}
-
-export async function seedDatabase() {
-  if (USE_MOCK) {
-    await delay(400);
-    mockIncidents = JSON.parse(JSON.stringify(initialIncidents));
-    mockResources = JSON.parse(JSON.stringify(initialResources));
-    mockPlans = JSON.parse(JSON.stringify(initialPlans));
-    mockLogs = JSON.parse(JSON.stringify(initialLogs));
-    return {
-      ok: true,
-      data: {
-        incidents: mockIncidents.length,
-        resources: mockResources.length,
-      },
-    };
-  }
-  return request("/api/seed", { method: "POST" });
-}
-
-// -------------------------------------------------------------
-// Plan & Agent API
-// -------------------------------------------------------------
-
 function generateMockPlanHelper({ trigger = "manual", incidentId = null, resourceId = null }) {
   const latestPlan = mockPlans[mockPlans.length - 1] || mockPlans[0];
   const newVersion = (latestPlan?.version || 1) + 1;
 
-  // Dynamically match available units to active incidents
+  // Match available units to active incidents
   const activeIncidents = mockIncidents.filter((i) => i.status !== "resolved");
   const availableRes = mockResources.filter(
     (r) =>
@@ -487,47 +317,6 @@ function generateMockPlanHelper({ trigger = "manual", incidentId = null, resourc
   };
 }
 
-export async function generatePlan({ trigger = "manual", incidentId = null, resourceId = null }) {
-  if (USE_MOCK) {
-    await delay(1000);
-    return generateMockPlanHelper({ trigger, incidentId, resourceId });
-  }
-  const res = await request("/api/plan/generate", {
-    method: "POST",
-    body: JSON.stringify({ trigger, incidentId, resourceId }),
-  });
-  if (isDbOrNetworkError(res)) {
-    return generateMockPlanHelper({ trigger, incidentId, resourceId });
-  }
-  return res;
-}
-
-export async function getCurrentPlan() {
-  if (USE_MOCK) {
-    await delay();
-    return getMockCurrentPlan();
-  }
-  const res = await request("/api/plan/current");
-  if (isDbOrNetworkError(res)) {
-    return getMockCurrentPlan();
-  }
-  return res;
-}
-
-export async function getPlanHistory() {
-  if (USE_MOCK) {
-    await delay();
-    const sorted = [...mockPlans].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return { ok: true, data: sorted };
-  }
-  const res = await request("/api/plan/history");
-  if (isDbOrNetworkError(res)) {
-    const sorted = [...mockPlans].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return { ok: true, data: sorted };
-  }
-  return res;
-}
-
 function approveMockPlanHelper(id, { note = "" } = {}) {
   const plan = mockPlans.find((p) => p.id === id) || mockPlans[mockPlans.length - 1];
   if (!plan) {
@@ -539,21 +328,6 @@ function approveMockPlanHelper(id, { note = "" } = {}) {
   return { ok: true, data: { ...plan } };
 }
 
-export async function approvePlan(id, { note = "" } = {}) {
-  if (USE_MOCK) {
-    await delay(200);
-    return approveMockPlanHelper(id, { note });
-  }
-  const res = await request(`/api/plan/${id}/approve`, {
-    method: "POST",
-    body: JSON.stringify({ note }),
-  });
-  if (isDbOrNetworkError(res)) {
-    return approveMockPlanHelper(id, { note });
-  }
-  return res;
-}
-
 function rejectMockPlanHelper(id, { note = "" } = {}) {
   const plan = mockPlans.find((p) => p.id === id) || mockPlans[mockPlans.length - 1];
   if (!plan) {
@@ -563,21 +337,6 @@ function rejectMockPlanHelper(id, { note = "" } = {}) {
   plan.dispatcherNote = note;
   plan.decidedAt = new Date().toISOString();
   return { ok: true, data: { ...plan } };
-}
-
-export async function rejectPlan(id, { note = "" } = {}) {
-  if (USE_MOCK) {
-    await delay(200);
-    return rejectMockPlanHelper(id, { note });
-  }
-  const res = await request(`/api/plan/${id}/reject`, {
-    method: "POST",
-    body: JSON.stringify({ note }),
-  });
-  if (isDbOrNetworkError(res)) {
-    return rejectMockPlanHelper(id, { note });
-  }
-  return res;
 }
 
 function editMockPlanHelper(id, { assignments, note = "" }) {
@@ -606,19 +365,193 @@ function editMockPlanHelper(id, { assignments, note = "" }) {
   return { ok: true, data: newPlan };
 }
 
+// -------------------------------------------------------------
+// Incidents API
+// -------------------------------------------------------------
+
+export async function getIncidents() {
+  if (USE_MOCK) {
+    await delay();
+    return getMockIncidents();
+  }
+  return request("/api/incidents");
+}
+
+export async function createIncident({ type, description, location, peopleAffected = null }) {
+  if (USE_MOCK) {
+    await delay(250);
+    return createMockIncident({ type, description, location, peopleAffected });
+  }
+
+  const payload = {
+    type,
+    description: description.trim(),
+    location: {
+      lat: Number(location.lat),
+      lng: Number(location.lng),
+      area: location.area?.trim() || "Bengaluru",
+    },
+    peopleAffected: peopleAffected !== null && peopleAffected !== "" ? Number(peopleAffected) : null,
+  };
+
+  return request("/api/incidents", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getIncident(id) {
+  if (USE_MOCK) {
+    await delay();
+    const incident = mockIncidents.find((inc) => inc.id === id);
+    if (!incident) {
+      return { ok: false, error: { code: "NOT_FOUND", message: `Incident ${id} not found` } };
+    }
+    return { ok: true, data: { ...incident } };
+  }
+  return request(`/api/incidents/${id}`);
+}
+
+export async function updateIncident(id, updates) {
+  if (USE_MOCK) {
+    await delay(200);
+    const index = mockIncidents.findIndex((inc) => inc.id === id);
+    if (index === -1) {
+      return { ok: false, error: { code: "NOT_FOUND", message: `Incident ${id} not found` } };
+    }
+    mockIncidents[index] = {
+      ...mockIncidents[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    return { ok: true, data: { ...mockIncidents[index] } };
+  }
+  return request(`/api/incidents/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+}
+
+// -------------------------------------------------------------
+// Resources API
+// -------------------------------------------------------------
+
+export async function getResources(kind) {
+  if (USE_MOCK) {
+    await delay();
+    return getMockResources(kind);
+  }
+  const query = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+  return request(`/api/resources${query}`);
+}
+
+export async function updateResponder({ resourceId, event }) {
+  if (USE_MOCK) {
+    await delay(250);
+    return updateMockResponderHelper({ resourceId, event });
+  }
+  return request("/api/responders/update", {
+    method: "POST",
+    body: JSON.stringify({ resourceId, event }),
+  });
+}
+
+// -------------------------------------------------------------
+// Dispatch API
+// -------------------------------------------------------------
+
+export async function dispatchPlan({ planId }) {
+  if (USE_MOCK) {
+    await delay(350);
+    return dispatchMockPlanHelper({ planId });
+  }
+  return request("/api/dispatch", {
+    method: "POST",
+    body: JSON.stringify({ planId }),
+  });
+}
+
+export async function seedDatabase() {
+  if (USE_MOCK) {
+    await delay(400);
+    mockIncidents = JSON.parse(JSON.stringify(initialIncidents));
+    mockResources = JSON.parse(JSON.stringify(initialResources));
+    mockPlans = JSON.parse(JSON.stringify(initialPlans));
+    mockLogs = JSON.parse(JSON.stringify(initialLogs));
+    return {
+      ok: true,
+      data: {
+        incidents: mockIncidents.length,
+        resources: mockResources.length,
+      },
+    };
+  }
+  return request("/api/seed", { method: "POST" });
+}
+
+// -------------------------------------------------------------
+// Plan & Agent API
+// -------------------------------------------------------------
+
+export async function generatePlan({ trigger = "manual", incidentId = null, resourceId = null }) {
+  if (USE_MOCK) {
+    await delay(1000);
+    return generateMockPlanHelper({ trigger, incidentId, resourceId });
+  }
+  return request("/api/plan/generate", {
+    method: "POST",
+    body: JSON.stringify({ trigger, incidentId, resourceId }),
+  });
+}
+
+export async function getCurrentPlan() {
+  if (USE_MOCK) {
+    await delay();
+    return getMockCurrentPlan();
+  }
+  return request("/api/plan/current");
+}
+
+export async function getPlanHistory() {
+  if (USE_MOCK) {
+    await delay();
+    const sorted = [...mockPlans].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return { ok: true, data: sorted };
+  }
+  return request("/api/plan/history");
+}
+
+export async function approvePlan(id, { note = "" } = {}) {
+  if (USE_MOCK) {
+    await delay(200);
+    return approveMockPlanHelper(id, { note });
+  }
+  return request(`/api/plan/${id}/approve`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
+}
+
+export async function rejectPlan(id, { note = "" } = {}) {
+  if (USE_MOCK) {
+    await delay(200);
+    return rejectMockPlanHelper(id, { note });
+  }
+  return request(`/api/plan/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
+}
+
 export async function editPlan(id, { assignments, note = "" }) {
   if (USE_MOCK) {
     await delay(300);
     return editMockPlanHelper(id, { assignments, note });
   }
-  const res = await request(`/api/plan/${id}/edit`, {
+  return request(`/api/plan/${id}/edit`, {
     method: "POST",
     body: JSON.stringify({ assignments, note }),
   });
-  if (isDbOrNetworkError(res)) {
-    return editMockPlanHelper(id, { assignments, note });
-  }
-  return res;
 }
 
 export async function getLogs(planVersion) {
@@ -627,9 +560,5 @@ export async function getLogs(planVersion) {
     return getMockLogs(planVersion);
   }
   const query = planVersion ? `?planVersion=${encodeURIComponent(planVersion)}` : "";
-  const res = await request(`/api/logs${query}`);
-  if (isDbOrNetworkError(res)) {
-    return getMockLogs(planVersion);
-  }
-  return res;
+  return request(`/api/logs${query}`);
 }

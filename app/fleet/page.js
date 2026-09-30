@@ -12,6 +12,7 @@ export default function FleetPage() {
   const [filter, setFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState(null);
   const [replanNotice, setReplanNotice] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   const loadData = () => {
@@ -36,15 +37,28 @@ export default function FleetPage() {
     if (updatingId) return;
     setUpdatingId(resourceId);
     setReplanNotice(null);
+    setErrorMessage(null);
 
     const res = await updateResponder({ resourceId, event });
     if (res.ok) {
       if (res.data?.replanNeeded) {
         setReplanNotice(`Unit status updated to ${event}. Auto-triggering AI replanning (trigger: responder_update)...`);
-        await generatePlan({ trigger: "responder_update", resourceId });
-        setReplanNotice(`✓ Replan complete! New plan synthesized based on ${event} event.`);
+        const genRes = await generatePlan({ trigger: "responder_update", resourceId });
+        if (!genRes.ok) {
+          setErrorMessage({
+            text: genRes.error?.message || "Failed to trigger automated replan",
+            onRetry: () => handleResponderEvent(resourceId, event),
+          });
+        } else {
+          setReplanNotice(`✓ Replan complete! New plan synthesized based on ${event} event.`);
+        }
       }
       loadData();
+    } else {
+      setErrorMessage({
+        text: res.error?.message || "Failed to update responder status",
+        onRetry: () => handleResponderEvent(resourceId, event),
+      });
     }
     setUpdatingId(null);
   };
@@ -112,6 +126,32 @@ export default function FleetPage() {
             >
               View Dispatch Plan →
             </Link>
+          </div>
+        )}
+
+        {/* Error Banner with Try Again */}
+        {errorMessage && (
+          <div className="bg-red-50 text-red-900 border border-red-200 p-4 rounded-3xl mb-6 text-xs flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="shrink-0 font-bold">✕</span>
+              <span className="font-medium break-words leading-tight">{errorMessage.text}</span>
+            </div>
+            <div className="flex items-center gap-2 ml-4 shrink-0">
+              {errorMessage.onRetry && (
+                <button
+                  onClick={errorMessage.onRetry}
+                  className="px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition active:scale-95"
+                >
+                  Try again
+                </button>
+              )}
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="text-neutral-500 hover:text-black font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 

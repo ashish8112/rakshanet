@@ -76,6 +76,7 @@ export default function DispatchPage() {
       setStatusMessage({
         type: "error",
         text: appRes.error?.message || "Failed to approve plan",
+        onRetry: () => handleApproveAndDispatch(),
       });
       setLoading(false);
       return;
@@ -106,6 +107,7 @@ export default function DispatchPage() {
       setStatusMessage({
         type: "error",
         text: dispRes.error?.message || "Failed to commit dispatch plan",
+        onRetry: () => handleApproveAndDispatch(),
       });
     }
     setLoading(false);
@@ -129,6 +131,7 @@ export default function DispatchPage() {
       setStatusMessage({
         type: "error",
         text: res.error?.message || "Failed to reject plan",
+        onRetry: () => handleReject(),
       });
     }
     setLoading(false);
@@ -170,6 +173,7 @@ export default function DispatchPage() {
       setStatusMessage({
         type: "error",
         text: res.error?.message || "Failed to edit plan",
+        onRetry: () => handleSaveEdit(),
       });
     }
     setLoading(false);
@@ -193,6 +197,7 @@ export default function DispatchPage() {
       setStatusMessage({
         type: "error",
         text: res.error?.message || "Plan generation failed",
+        onRetry: () => handleGenerate(trigger),
       });
     }
     setLoading(false);
@@ -269,13 +274,34 @@ export default function DispatchPage() {
                 : "bg-blue-50 text-blue-900 border-blue-200"
             }`}
           >
-            <span>{statusMessage.text}</span>
-            <button
-              onClick={() => setStatusMessage(null)}
-              className="text-neutral-500 hover:text-black font-bold text-xs ml-4"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="shrink-0">
+                {statusMessage.type === "success"
+                  ? "✓"
+                  : statusMessage.type === "warning"
+                  ? "⚠️"
+                  : statusMessage.type === "info"
+                  ? "ℹ"
+                  : "✕"}
+              </span>
+              <span className="font-medium break-words leading-tight">{statusMessage.text}</span>
+            </div>
+            <div className="flex items-center gap-2 ml-4 shrink-0">
+              {statusMessage.onRetry && (
+                <button
+                  onClick={statusMessage.onRetry}
+                  className="px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition active:scale-95"
+                >
+                  Try again
+                </button>
+              )}
+              <button
+                onClick={() => setStatusMessage(null)}
+                className="text-neutral-500 hover:text-black font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 

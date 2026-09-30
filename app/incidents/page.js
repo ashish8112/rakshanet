@@ -15,6 +15,7 @@ export default function IncidentsPage() {
   const [answers, setAnswers] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
   const [actionNotice, setActionNotice] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   const loadData = () => {
@@ -41,6 +42,7 @@ export default function IncidentsPage() {
 
     setSubmittingId(incident.id);
     setActionNotice(null);
+    setErrorMessage(null);
 
     const updatedDescription = `${incident.description} | Caller clarification: ${answer.trim()}`;
     const updateRes = await updateIncident(incident.id, {
@@ -49,10 +51,22 @@ export default function IncidentsPage() {
 
     if (updateRes.ok) {
       setActionNotice(`Clarification saved for ${incident.code}. Re-evaluating plan with Gemini agents...`);
-      await generatePlan({ trigger: "manual", incidentId: incident.id });
-      setActionNotice(`✓ Plan re-evaluated for ${incident.code}. Ready in Dispatch center.`);
+      const genRes = await generatePlan({ trigger: "manual", incidentId: incident.id });
+      if (!genRes.ok) {
+        setErrorMessage({
+          text: genRes.error?.message || "Failed to re-evaluate plan after clarification",
+          onRetry: () => handleAnswerQuestion(incident),
+        });
+      } else {
+        setActionNotice(`✓ Plan re-evaluated for ${incident.code}. Ready in Dispatch center.`);
+      }
       setAnswers((prev) => ({ ...prev, [incident.id]: "" }));
       loadData();
+    } else {
+      setErrorMessage({
+        text: updateRes.error?.message || "Failed to save caller clarification",
+        onRetry: () => handleAnswerQuestion(incident),
+      });
     }
     setSubmittingId(null);
   };
@@ -137,6 +151,32 @@ export default function IncidentsPage() {
             >
               Go to Dispatch →
             </Link>
+          </div>
+        )}
+
+        {/* Error Banner with Try Again */}
+        {errorMessage && (
+          <div className="bg-red-50 text-red-900 border border-red-200 p-4 rounded-3xl mb-6 text-xs flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="shrink-0 font-bold">✕</span>
+              <span className="font-medium break-words leading-tight">{errorMessage.text}</span>
+            </div>
+            <div className="flex items-center gap-2 ml-4 shrink-0">
+              {errorMessage.onRetry && (
+                <button
+                  onClick={errorMessage.onRetry}
+                  className="px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition active:scale-95"
+                >
+                  Try again
+                </button>
+              )}
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="text-neutral-500 hover:text-black font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 

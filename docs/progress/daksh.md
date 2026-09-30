@@ -74,3 +74,4 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 - Deployment is owned by Ashish (Vercel live link).
 - Gate 2: `PlanPanel.js` wired with exact `approve -> dispatchPlan({ planId }) -> if committed: false replan(trigger: 'resource_change')` logic from `/dispatch`, with optional reject note and status/conflict banners. Available both on dedicated `/dispatch` page and as a collapsible drawer on the main dashboard (`/`).
+- Removed all automatic mock fallback on server errors in `components/api.js` (keeping `USE_MOCK` as single explicit switch). Backend errors now surface transparently with `error.message` and an active "Try again" button across `PlanPanel`, `/dispatch`, `/fleet`, and `/incidents`.

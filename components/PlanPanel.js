@@ -43,6 +43,7 @@ export default function PlanPanel({
       setStatusMessage({
         type: "error",
         text: appRes.error?.message || "Failed to approve plan",
+        onRetry: () => handleApprove(),
       });
       setActionLoading(false);
       setLoadingMessage("");
@@ -74,6 +75,7 @@ export default function PlanPanel({
       setStatusMessage({
         type: "error",
         text: dispRes.error?.message || "Failed to commit dispatch plan",
+        onRetry: () => handleApprove(),
       });
     }
     setActionLoading(false);
@@ -97,6 +99,7 @@ export default function PlanPanel({
       setStatusMessage({
         type: "error",
         text: res.error?.message || "Failed to reject plan",
+        onRetry: () => handleReject(),
       });
     }
     setActionLoading(false);
@@ -119,6 +122,7 @@ export default function PlanPanel({
       setStatusMessage({
         type: "error",
         text: res.error?.message || "Plan generation failed",
+        onRetry: () => handleGenerate(trigger),
       });
     }
     await onRefresh();
@@ -204,8 +208,8 @@ export default function PlanPanel({
                 : "bg-red-50 text-red-900 border-red-200"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="shrink-0">
                 {statusMessage.type === "success"
                   ? "✓"
                   : statusMessage.type === "warning"
@@ -214,14 +218,24 @@ export default function PlanPanel({
                   ? "ℹ"
                   : "✕"}
               </span>
-              <span className="font-medium">{statusMessage.text}</span>
+              <span className="font-medium break-words leading-tight">{statusMessage.text}</span>
             </div>
-            <button
-              onClick={() => setStatusMessage(null)}
-              className="text-neutral-400 hover:text-neutral-700 text-xs font-bold ml-2"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-1.5 ml-2 shrink-0">
+              {statusMessage.onRetry && (
+                <button
+                  onClick={statusMessage.onRetry}
+                  className="px-2.5 py-1 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-[11px] shadow-sm transition"
+                >
+                  Try again
+                </button>
+              )}
+              <button
+                onClick={() => setStatusMessage(null)}
+                className="text-neutral-400 hover:text-neutral-700 text-xs font-bold"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
