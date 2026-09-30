@@ -1,7 +1,7 @@
 # RakshaNet demo script (about 4 minutes)
 
 Live: https://rakshanet-three.vercel.app — sign in with any name and the control room password.
-Tutorial video (works without signing in): https://rakshanet-three.vercel.app/tutorial.mp4 — also "▶ Watch the demo video" on the login page and "▶ Watch video" in the app header. Offline copy on Ashish's laptop: `public/tutorial.mp4`.
+Tutorial video with voice-over (works without signing in): English https://rakshanet-three.vercel.app/tutorial.mp4, Hindi https://rakshanet-three.vercel.app/tutorial-hi.mp4 (the player has a 🔊 English / हिंदी switch) — also "▶ Watch the demo video" on the login page and "▶ Watch video" in the app header. Offline copies on Ashish's laptop: `public/tutorial.mp4`, `public/tutorial-hi.mp4`.
 
 ## Before the demo (5 minutes earlier)
 

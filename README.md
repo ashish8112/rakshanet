@@ -4,7 +4,7 @@
 
 Live demo: https://rakshanet-three.vercel.app
 
-Tutorial video (5 min, no login needed): https://rakshanet-three.vercel.app/tutorial.mp4
+Tutorial video (5 min, no login needed): [English](https://rakshanet-three.vercel.app/tutorial.mp4) · [हिंदी](https://rakshanet-three.vercel.app/tutorial-hi.mp4)
 Built in 24 hours by team **CodeStorm** (Ashish, Daksh, Sam) for the Agentic AI hackathon.
 
 ---
