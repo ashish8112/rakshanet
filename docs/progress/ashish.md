@@ -2,9 +2,9 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 1 (Phase 0 team handoff and deployment still need Ashish)
+**Current phase:** 1
 **Next step:** 1.5 (live assessments for 3 reports and Phase 1 PR review/merge)
-**Branch:** backend-agents (local worktree; remote branch not pushed yet)
+**Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
 
@@ -14,13 +14,13 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 0.2 Create the skeleton: Next.js app, .gitignore, packages, folders, CONTRACT.md, .env.example, build passes
 - [x] 0.3 First commit and push to `main` (commit `29dd297`)
 - [ ] 0.4 Tell the team: "Phase 0 pushed. Pull main, run npm install, copy .env.example to .env.local, checkout your branch."
-- [ ] 0.5 Vercel deploy (Ashish owns deployment): import repo, add 3 env variables, deploy, share live link
-- [ ] 0.6 Create your branch from `main`: `git checkout -b backend-agents`, `git push -u origin backend-agents`
+- [x] 0.5 Vercel deploy: live at https://rakshanet-three.vercel.app (project `ashish-shukla81/rakshanet`, auto-deploys on every push to `main`). Env: `MONGODB_URI`, `GEMINI_API_KEY` set; `GEMINI_MODEL` still MISSING
+- [x] 0.6 Branch `backend-agents` exists on GitHub
 - Extra (done for Sam): Sam's 0.1 MongoDB Atlas, 0.4 `backend-data` branch, 1.1 DB layer. See `docs/progress/sam.md`.
 
 **Gate 0 (whole team)**
 - [ ] All 3 laptops show the app at `localhost:3000`
-- [ ] Vercel live link opens
+- [x] Vercel live link opens
 - [ ] 3 branches exist on GitHub
 - [ ] Everyone has read `CONTRACT.md` and has no open questions
 
@@ -78,6 +78,8 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
+
+- All branches (backend-data, backend-agents, frontend) merged into `main` and deployed. Kept main's package-lock.json (branch version only had npm metadata changes).
 
 - Deployment moved from Sam to Ashish: Vercel project, env variables, live link.
 - Models for agents: `import { connectDB, Plan, AgentLog } from "@/lib/db";` They are on `backend-data`, not yet on `main`. Merge `backend-data` into `backend-agents` (or wait for Sam's Phase 1 PR) to use them.
