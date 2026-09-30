@@ -52,9 +52,19 @@ function ClickToPick({ onPick }) {
 
 function FlyTo({ target }) {
   const map = useMap();
+  const lat = target?.lat;
+  const lng = target?.lng;
+  // Depends on the numbers, not the object, so the 15-second refresh does not pull the map back.
   useEffect(() => {
-    if (target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 13), { duration: 0.8 });
-  }, [target, map]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const size = map.getSize();
+    if (size.x === 0 || size.y === 0) return; // map not visible yet: flying would fail
+    try {
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 0.8 });
+    } catch {
+      map.setView([lat, lng], 14);
+    }
+  }, [lat, lng, map]);
   return null;
 }
 

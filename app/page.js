@@ -1,7 +1,7 @@
 // The control room: emergencies (left), map (centre), AI plan / units / activity (right).
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Header, { HelpDialog } from "@/components/Header";
 import EmergencyList from "@/components/EmergencyList";
@@ -17,10 +17,26 @@ const MapView = dynamic(() => import("@/components/MapView"), {
 });
 
 const REFRESH_MS = 15000;
+
+// Desktop (three columns) or phone/tablet (one view at a time). Only ONE layout is rendered, so there is
+// only one map: a hidden second map has no size and crashes Leaflet when it tries to fly somewhere.
+const DESKTOP_QUERY = "(min-width: 1024px)";
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const media = window.matchMedia(DESKTOP_QUERY);
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => true
+  );
+}
 const RIGHT_TABS = [["plan", "AI Plan"], ["units", "Units"], ["activity", "Activity"]];
 const MOBILE_VIEWS = [["list", "🚨", "Emergencies"], ["map", "🗺️", "Map"], ["plan", "✨", "Plan"], ["units", "🚑", "Units"], ["activity", "🕒", "Activity"]];
 
 export default function ControlRoom() {
+  const isDesktop = useIsDesktop();
   const [incidents, setIncidents] = useState([]);
   const [resources, setResources] = useState([]);
   const [plan, setPlan] = useState(null);
@@ -103,7 +119,7 @@ export default function ControlRoom() {
     <NewEmergency
       location={pickedLocation}
       onChooseOnMap={() => { setPicking(true); setMobileView("map"); }}
-      onChooseArea={(location) => { setPickedLocation(location); setPicking(false); }}
+      onChooseArea={(location) => { setPickedLocation(location); setPicking(false); }} // null = "Change": search again
       onClose={stopCreating}
       onCreated={async (incident) => {
         stopCreating();
@@ -164,7 +180,8 @@ export default function ControlRoom() {
       )}
 
       {/* Desktop: three columns */}
-      <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[360px_1fr_420px] xl:grid-cols-[380px_1fr_460px]">
+      {isDesktop && (
+      <div className="grid min-h-0 flex-1 grid-cols-[360px_1fr_420px] xl:grid-cols-[380px_1fr_460px]">
         <aside className="min-h-0 border-r border-slate-200 bg-slate-50">{leftColumn}</aside>
         <main className="min-h-0">{map}</main>
         <aside className="flex min-h-0 flex-col border-l border-slate-200 bg-slate-50">
@@ -181,14 +198,17 @@ export default function ControlRoom() {
           <div className="min-h-0 flex-1 overflow-y-auto">{rightContent[rightTab]}</div>
         </aside>
       </div>
+      )}
 
       {/* Phone and tablet: one view at a time */}
-      <div className="min-h-0 flex-1 overflow-y-auto lg:hidden">
+      {!isDesktop && (
+      <>
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {mobileView === "list" && leftColumn}
         {mobileView === "map" && <div className="h-full">{map}</div>}
         {mobileView !== "list" && mobileView !== "map" && rightContent[mobileView]}
       </div>
-      <nav className="grid shrink-0 grid-cols-5 border-t border-slate-200 bg-white lg:hidden">
+      <nav className="grid shrink-0 grid-cols-5 border-t border-slate-200 bg-white">
         {MOBILE_VIEWS.map(([key, icon, label]) => (
           <button key={key} onClick={() => setMobileView(key)}
             className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${mobileView === key ? "font-semibold text-blue-700" : "text-slate-500"}`}>
@@ -196,6 +216,8 @@ export default function ControlRoom() {
           </button>
         ))}
       </nav>
+      </>
+      )}
 
       {toast && (
         <div className="fixed left-1/2 top-20 z-[2000] -translate-x-1/2 rounded-full bg-slate-900 px-5 py-3 text-sm text-white shadow-xl">{toast}</div>

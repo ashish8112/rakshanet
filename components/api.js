@@ -29,6 +29,9 @@ export const getIncidents = () => request("/api/incidents");
 export const createIncident = (incident) => request("/api/incidents", { method: "POST", body: incident });
 export const updateIncident = (id, changes) => request(`/api/incidents/${id}`, { method: "PATCH", body: changes });
 
+// Place search ("Kristu Jayanti University" -> coordinates)
+export const searchPlaces = (q) => request(`/api/geocode?q=${encodeURIComponent(q)}`);
+
 // Units, hospitals, shelters
 export const getResources = () => request("/api/resources");
 export const updateResponder = (resourceId, event) => request("/api/responders/update", { method: "POST", body: { resourceId, event } });
