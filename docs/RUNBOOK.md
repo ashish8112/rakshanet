@@ -25,7 +25,8 @@ Details behind each step (data shapes, endpoints, tool functions) are in `CONTRA
 - **0.3 First commit and push to `main`.** Check `git status` shows no `.env.local` and no `node_modules`. Commit message: `phase 0: next.js skeleton, contract, folders, docs`. Push to `origin main`.
   Done when: GitHub shows the files on `main`.
 - **0.4 Tell the team.** Message: "Phase 0 pushed. Pull main, run npm install, copy .env.example to .env.local, create your branch."
-- **0.5 Check the live link** once Sam shares it (it opens the default Next.js page).
+- **0.5 Vercel deploy (Ashish owns deployment):** import the repo on Vercel, add the 3 env variables (`MONGODB_URI`, `GEMINI_API_KEY`, `GEMINI_MODEL`), deploy, share the live link with the team (it opens the default Next.js page).
+  Done when: live link opens.
 - **0.6 Create your branch:** `git checkout -b backend-agents` then `git push -u origin backend-agents`.
   Done when: branch visible on GitHub.
 
@@ -33,7 +34,7 @@ Details behind each step (data shapes, endpoints, tool functions) are in `CONTRA
 
 - **0.1 MongoDB Atlas:** DONE by Ashish (database `rakshanet`). Get the connection string from Ashish privately (never in the repo).
 - **0.2 Pull `main`** after Ashish's 0.3, `npm install`, create `.env.local` from `.env.example` with real values.
-- **0.3 Vercel:** import the repo, add the 3 env variables, deploy, share the live link.
+- **0.3 Vercel:** NOT Sam's job. Ashish owns deployment (his 0.5). Skip.
 - **0.4 Your branch:** ALREADY EXISTS (created by Ashish). Do not use `-b`. Run `git fetch origin`, `git checkout backend-data`, `git pull`.
 
 ### Daksh

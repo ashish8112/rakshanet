@@ -26,7 +26,9 @@ Never edit shared files (package.json, app/layout.js, CONTRACT.md, CLAUDE.md, .e
 
 ## Extra duties
 
-Vercel deploy and env variables. Demo scenario script (`docs/demo-script.md`). Edge case testing. README setup steps in Phase 4.
+(Vercel deployment is NOT Sam's job: Ashish owns it.)
+
+Demo scenario script (`docs/demo-script.md`). Edge case testing. README setup steps in Phase 4.
 
 ## My steps
 
