@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 2
-**Next step:** Gate 2 (team check on the live link), then Phase 3 step 3.1 (replanning only affected incidents)
+**Current phase:** 3
+**Next step:** 3.3 (escalation: expected delay for uncovered incidents, alternatives with trade-offs)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -54,8 +54,8 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 
 ## Phase 3: Replanning, edge cases, polish (8:00 PM to 1:00 AM)
 
-- [ ] 3.1 Replanning of only affected incidents, with a `changes` list vs the previous plan version
-- [ ] 3.2 Investigate loop: vague incident -> status `needs_info` with follow-up questions
+- [x] 3.1 Replanning only what changed: allocation sees units already on scene (fills only missing capabilities) and the previous plan's units (keeps them unless needed elsewhere); reopened incidents still fully covered go back to `dispatched`; Command agent is told what triggered the replan so `changes[].why` names the real cause. Tested: AMB-03 breaks down on INC-003 -> v2 = only AMB-04 -> INC-003, why "AMB-03 is now unavailable", ~3 s
+- [x] 3.2 Investigate loop: vague incident -> `needs_info` + question (done in 2.4). Fixed: only low-confidence, severity <= 3 incidents with no units may be investigated; severe ones get units now and keep their follow-up questions
 - [ ] 3.3 Escalation and conflicts: `uncovered` with reason and delay; alternatives with trade-offs
 - [ ] 3.4 Prompt tuning so reasons and summaries read clearly to a non-technical judge
 
@@ -78,6 +78,8 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - `backend-agents` is local only. Phase 1 PR review and merge are pending, as are Ashish's Phase 0 team handoff and Vercel deployment.
 
 ## Notes
+
+- Sam's `responders/update` must reopen an incident (`planned`) when a unit goes `unavailable`, or replanning never covers it. Fix written by Ashish, kept in a local git stash on `backend-data` (not pushed); waiting to hear from Sam.
 
 - `POST /api/plan/generate` now accepts `incidentId: null` (Daksh's api.js sends null). Gemini failures return code `AGENT_ERROR` (502).
 - `expectedDelayMinutes` in `uncovered` is null for now; estimate comes in 3.3.
