@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 0
-**Next step:** 0.4 (tell the team), then 0.6 (create `backend-agents`)
+**Next step:** 0.4 (tell the team), 0.5 (Vercel deploy, now owned by Ashish), then 0.6 (create `backend-agents`)
 **Branch:** main
 
 ## Done
@@ -18,6 +18,8 @@ Claude Code updates this file after every finished step. When asking for help in
 - (none)
 
 ## Notes
+
+- Deployment moved from Sam to Ashish: Vercel project, env variables, live link.
 
 - Models for agents: `import { connectDB, Plan, AgentLog } from "@/lib/db";` They are on `backend-data`, not yet on `main`. Merge `backend-data` into `backend-agents` (or wait for Sam's Phase 1 PR) to use them.
 - Plan/AgentLog id fields are real ObjectIds: stub tools must return 24-hex ids, not `"66f..."`.

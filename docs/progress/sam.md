@@ -24,7 +24,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 ## Still to do from Phase 0
 
 - [ ] 0.2 Pull, `npm install`, create `.env.local` from `.env.example` (get `MONGODB_URI` from Ashish).
-- [ ] 0.3 Vercel: import the repo, add the 3 env variables, deploy, share the live link.
+- (0.3 Vercel is NOT Sam's job anymore: Ashish owns deployment.)
 
 ## Blockers
 
