@@ -2,8 +2,8 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 1
-**Next step:** Phase 1/2 PR handoff for 1.4 and 2.1; confirm seed endpoint access policy with the team before deployment, then start 2.2
+**Current phase:** 3 (Gate 2 team integration is still pending)
+**Next step:** 3.3 demo script; Gate 2 live integration checks remain pending
 **Branch:** backend-data (already exists on GitHub, created by Ashish)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -36,7 +36,7 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 - [x] 1.1 DB layer (done by Ashish): `lib/db/connect.js` (cached connection), models Incident, Resource, Plan, AgentLog in `lib/db/models/`, exported from `lib/db/index.js`. Tested: shapes match CONTRACT.md 5.1, JSON uses `id`, bad enums rejected, real Atlas connection works, build passes.
 - [x] 1.2 Seed data: `scripts/generate_seed_data.py` writes `data/resources.json` (8 ambulances, 4 fire units, 4 rescue teams, 6 hospitals, 4 shelters across six Bengaluru areas) and `data/demo-incidents.json` (3 incidents). Fictional facilities and availability; coordinates are approximate neighbourhood positions. Checked counts, contract shapes, unique codes and resource positions, capacities, and identical output on rerun.
 - [x] 1.3 `POST /api/seed`: route validates the seed data and resets incidents, resources, plans, and logs in one transaction. Approved live test returned 3 incidents and 26 resources; follow-up reads confirmed the counts and removal of the temporary incident.
-- [ ] 1.4 `GET /api/resources` (optional `?kind=`), `GET /api/incidents`, `POST /api/incidents`; routes implemented and tested with local curl commands. A temporary incident was created, read by id and list, then removed by the approved seed reset. PR merge remains pending.
+- [x] 1.4 `GET /api/resources` (optional `?kind=`), `GET /api/incidents`, `POST /api/incidents`; routes tested with local curl commands. A temporary incident was created, read by id and list, then removed by the approved seed reset. PR #1 merged into `main` on 2026-09-30.
 
 **Gate 1 (whole team)**
 - [ ] All Phase 1 PRs merged into `main`
@@ -46,9 +46,9 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 ## Phase 2: Core loop (4:30 PM to 8:00 PM)
 
-- [ ] 2.1 All 7 tool functions implemented in `lib/tools/index.js` with contract names and outputs. Worked examples passed against seeded Atlas data: Koramangala to Indiranagar 4.5 km, ambulance ETA 9 min; 7 available ambulances; nearest medical units AMB-01/02/03; HOS-01 has 14 free places for 10 needed; a same-location incident is detected as a duplicate; an available assignment validates and an unavailable unit conflicts. Hospital over-capacity also conflicts. ESLint and webpack build pass. PR remains pending.
-- [ ] 2.2 `POST /api/responders/update` and `PATCH /api/incidents/:id`
-- [ ] 2.3 `POST /api/dispatch` with revalidation (`validateAssignments`); reserve units, incidents -> `dispatched`; on conflict commit nothing
+- [x] 2.1 All 7 tool functions implemented in `lib/tools/index.js` with contract names and outputs. Worked examples passed against seeded Atlas data: Koramangala to Indiranagar 4.5 km, ambulance ETA 9 min; 7 available ambulances; nearest medical units AMB-01/02/03; HOS-01 has 14 free places for 10 needed; a same-location incident is detected as a duplicate; an available assignment validates and an unavailable unit conflicts. Hospital over-capacity also conflicts. ESLint and webpack build pass. PR #1 merged into `main` on 2026-09-30.
+- [x] 2.2 `POST /api/responders/update` and `PATCH /api/incidents/:id` implemented. Pushed in `3b93242` and merged through PR #1. A later branch fix makes an unavailable assigned unit return a dispatched incident to `planned`, and clearing its final unit sets it to `resolved`. Lint, build, and live Atlas checks passed, including a two-unit case; temporary records were removed and counts returned to 3 incidents and 26 resources. The fix awaits a separate PR.
+- [x] 2.3 `POST /api/dispatch` revalidates approved plan assignments, then reserves units, marks incidents `dispatched`, and commits the plan in one transaction. A conflict returns `committed: false` with no writes. Lint, production build with local font responses, and live Atlas success/conflict/repeat-dispatch tests passed; temporary records were removed. Pushed in `3b93242`.
 
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
@@ -57,8 +57,8 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 ## Phase 3: Replanning, edge cases, polish (8:00 PM to 1:00 AM)
 
-- [ ] 3.1 Duplicate detection in `POST /api/incidents` (within 0.5 km and 30 minutes)
-- [ ] 3.2 Hospital and shelter capacity updated on dispatch
+- [x] 3.1 Duplicate detection in `POST /api/incidents` using Sam's tool. The response includes nearby recent reports, and `possibleDuplicateOf` points to the nearest match. Lint, build, and live Atlas tests for nearby, distant, and older reports passed; temporary reports were removed and the incident count returned to 3. The change awaits a separate PR.
+- [x] 3.2 Hospital and shelter capacity updated on dispatch in the same transaction as unit and plan changes. One place is reserved per assignment. Lint, build, and live Atlas tests for both destination kinds and a full-capacity conflict passed; temporary records were removed and counts returned to 3 incidents, 26 resources, and 0 plans. The change awaits a separate PR.
 - [ ] 3.3 `docs/demo-script.md`: exact inputs and clicks for the 3-minute demo
 - [ ] 3.4 Tune seed data so the demo really runs out of units at the escalation step
 - [ ] 3.5 Test every edge case from the Round 1 doc, report bugs to the owner
@@ -77,11 +77,16 @@ Some of Sam's steps were already done by Ashish. Do NOT redo them.
 
 ## Blockers
 
-- (none)
+- Gate 2 still needs a live report-to-dispatch demonstration. In merged frontend code, the "Approve & Dispatch" handlers call approval but do not call `dispatchPlan`. Phase 3 changes and the responder status fix need a separate PR.
 
 ## Notes
 
-- Local check on 2026-09-30: `backend-data` tracks `origin/backend-data`; `package-lock.json` has pre-existing uncommitted changes. Preserve that lockfile change while working.
+- Local check on 2026-09-30: `backend-data` tracks `origin/backend-data`; the working tree was clean before step 2.2 began.
+- Fetched and fast-forward merged `origin/main` through `8988721` into `backend-data` on 2026-09-30; no conflicts, and all four local work files matched their pre-merge backups. Lint and webpack build passed after the merge. Responder, duplicate, and capacity checks passed against the separate `rakshanet_test` database; temporary records were removed.
+- PR #1 merged: https://github.com/ashish8112/rakshanet/pull/1 (data, seed, tools, and Phase 2 routes). Phase 3.1, 3.2, and the responder status fix are on `backend-data` pending a separate PR.
+- Step 2.2 responder behavior: arrived moves an assigned reserved/en-route unit to on_scene; unavailable releases its assignment, returns a dispatched incident to `planned`, and requests replanning; available restores an unassigned unavailable unit; cleared releases an assigned unit and resolves the incident only when no assigned units remain. Incident and resource changes happen in one transaction.
+- Current `POST /api/incidents` generates random `INC-` codes, not sequential `INC-00X` codes. Duplicate detection is complete, but the team's preferred code format should be settled before changing it.
+- Capacity accounting currently reserves one place per assignment, matching the route agent's `needed: 1`. A teammate's proposed `peopleAffected` accounting needs a coordinated change to destination selection and dispatch validation before use.
 - Phase 1 routes pass ESLint and `npm run build -- --webpack`. The default Turbopack build failed in this environment while fetching fonts or binding a worker port. The seed endpoint follows the current contract and has no access control; the team should settle access before deploying it.
 - The shared Atlas database now contains 26 seeded resources and 3 seeded incidents. No plans or agent logs were seeded.
 - `findNearestAvailable` handles mobile capabilities (`medical`, `fire`, `rescue`); hospital and shelter destinations use `findNearestWithCapacity`. Assignment destination capacity currently counts one place per assignment because the Plan assignment contract has no patient or occupant count.
