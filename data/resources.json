@@ -1,0 +1,452 @@
+[
+  {
+    "code": "AMB-01",
+    "kind": "ambulance",
+    "name": "Koramangala Ambulance 01 (demo)",
+    "location": {
+      "lat": 12.9352,
+      "lng": 77.6245,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-02",
+    "kind": "ambulance",
+    "name": "Koramangala Ambulance 02 (demo)",
+    "location": {
+      "lat": 12.9364,
+      "lng": 77.6256,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-03",
+    "kind": "ambulance",
+    "name": "Indiranagar Ambulance 03 (demo)",
+    "location": {
+      "lat": 12.9719,
+      "lng": 77.6412,
+      "area": "Indiranagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-04",
+    "kind": "ambulance",
+    "name": "Indiranagar Ambulance 04 (demo)",
+    "location": {
+      "lat": 12.9731,
+      "lng": 77.6423,
+      "area": "Indiranagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-05",
+    "kind": "ambulance",
+    "name": "Jayanagar Ambulance 05 (demo)",
+    "location": {
+      "lat": 12.9249,
+      "lng": 77.5823,
+      "area": "Jayanagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-06",
+    "kind": "ambulance",
+    "name": "Malleshwaram Ambulance 06 (demo)",
+    "location": {
+      "lat": 13.002,
+      "lng": 77.5707,
+      "area": "Malleshwaram"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-07",
+    "kind": "ambulance",
+    "name": "Hebbal Ambulance 07 (demo)",
+    "location": {
+      "lat": 13.0358,
+      "lng": 77.597,
+      "area": "Hebbal"
+    },
+    "status": "available",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "AMB-08",
+    "kind": "ambulance",
+    "name": "Yelahanka New Town Ambulance 08 (demo)",
+    "location": {
+      "lat": 13.0969,
+      "lng": 77.581,
+      "area": "Yelahanka New Town"
+    },
+    "status": "unavailable",
+    "capabilities": [
+      "medical"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "FIR-01",
+    "kind": "fire_unit",
+    "name": "Koramangala Fire Unit 01 (demo)",
+    "location": {
+      "lat": 12.934,
+      "lng": 77.6267,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "fire",
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "FIR-02",
+    "kind": "fire_unit",
+    "name": "Indiranagar Fire Unit 02 (demo)",
+    "location": {
+      "lat": 12.9707,
+      "lng": 77.6434,
+      "area": "Indiranagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "fire",
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "FIR-03",
+    "kind": "fire_unit",
+    "name": "Malleshwaram Fire Unit 03 (demo)",
+    "location": {
+      "lat": 13.0032,
+      "lng": 77.5718,
+      "area": "Malleshwaram"
+    },
+    "status": "available",
+    "capabilities": [
+      "fire",
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "FIR-04",
+    "kind": "fire_unit",
+    "name": "Hebbal Fire Unit 04 (demo)",
+    "location": {
+      "lat": 13.037,
+      "lng": 77.5981,
+      "area": "Hebbal"
+    },
+    "status": "unavailable",
+    "capabilities": [
+      "fire",
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "RES-01",
+    "kind": "rescue_team",
+    "name": "Koramangala Rescue Team 01 (demo)",
+    "location": {
+      "lat": 12.9352,
+      "lng": 77.6234,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "RES-02",
+    "kind": "rescue_team",
+    "name": "Indiranagar Rescue Team 02 (demo)",
+    "location": {
+      "lat": 12.9719,
+      "lng": 77.6401,
+      "area": "Indiranagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "RES-03",
+    "kind": "rescue_team",
+    "name": "Jayanagar Rescue Team 03 (demo)",
+    "location": {
+      "lat": 12.9261,
+      "lng": 77.5834,
+      "area": "Jayanagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "RES-04",
+    "kind": "rescue_team",
+    "name": "Yelahanka New Town Rescue Team 04 (demo)",
+    "location": {
+      "lat": 13.0981,
+      "lng": 77.5821,
+      "area": "Yelahanka New Town"
+    },
+    "status": "available",
+    "capabilities": [
+      "rescue"
+    ],
+    "capacity": null,
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-01",
+    "kind": "hospital",
+    "name": "Koramangala Community Hospital 01 (demo)",
+    "location": {
+      "lat": 12.9364,
+      "lng": 77.6245,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 32,
+      "used": 18
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-02",
+    "kind": "hospital",
+    "name": "Indiranagar Community Hospital 02 (demo)",
+    "location": {
+      "lat": 12.9731,
+      "lng": 77.6412,
+      "area": "Indiranagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 45,
+      "used": 38
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-03",
+    "kind": "hospital",
+    "name": "Jayanagar Community Hospital 03 (demo)",
+    "location": {
+      "lat": 12.9237,
+      "lng": 77.5845,
+      "area": "Jayanagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 28,
+      "used": 12
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-04",
+    "kind": "hospital",
+    "name": "Malleshwaram Community Hospital 04 (demo)",
+    "location": {
+      "lat": 13.0008,
+      "lng": 77.5729,
+      "area": "Malleshwaram"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 36,
+      "used": 20
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-05",
+    "kind": "hospital",
+    "name": "Hebbal Community Hospital 05 (demo)",
+    "location": {
+      "lat": 13.0346,
+      "lng": 77.5992,
+      "area": "Hebbal"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 50,
+      "used": 46
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "HOS-06",
+    "kind": "hospital",
+    "name": "Yelahanka New Town Community Hospital 06 (demo)",
+    "location": {
+      "lat": 13.0957,
+      "lng": 77.5832,
+      "area": "Yelahanka New Town"
+    },
+    "status": "available",
+    "capabilities": [
+      "beds"
+    ],
+    "capacity": {
+      "total": 24,
+      "used": 8
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "SHE-01",
+    "kind": "shelter",
+    "name": "Koramangala Relief Shelter 01 (demo)",
+    "location": {
+      "lat": 12.934,
+      "lng": 77.6256,
+      "area": "Koramangala"
+    },
+    "status": "available",
+    "capabilities": [
+      "shelter"
+    ],
+    "capacity": {
+      "total": 80,
+      "used": 31
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "SHE-02",
+    "kind": "shelter",
+    "name": "Jayanagar Relief Shelter 02 (demo)",
+    "location": {
+      "lat": 12.9249,
+      "lng": 77.5812,
+      "area": "Jayanagar"
+    },
+    "status": "available",
+    "capabilities": [
+      "shelter"
+    ],
+    "capacity": {
+      "total": 60,
+      "used": 48
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "SHE-03",
+    "kind": "shelter",
+    "name": "Hebbal Relief Shelter 03 (demo)",
+    "location": {
+      "lat": 13.0358,
+      "lng": 77.5959,
+      "area": "Hebbal"
+    },
+    "status": "available",
+    "capabilities": [
+      "shelter"
+    ],
+    "capacity": {
+      "total": 45,
+      "used": 12
+    },
+    "assignedIncident": null
+  },
+  {
+    "code": "SHE-04",
+    "kind": "shelter",
+    "name": "Yelahanka New Town Relief Shelter 04 (demo)",
+    "location": {
+      "lat": 13.0969,
+      "lng": 77.5799,
+      "area": "Yelahanka New Town"
+    },
+    "status": "available",
+    "capabilities": [
+      "shelter"
+    ],
+    "capacity": {
+      "total": 70,
+      "used": 55
+    },
+    "assignedIncident": null
+  }
+]
