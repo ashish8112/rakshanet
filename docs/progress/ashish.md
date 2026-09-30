@@ -2,11 +2,38 @@
 
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
-**Current phase:** 3
-**Next step:** Gate 3 with the team (demo script 3x on the live link, edge cases), then Phase 4 (README technical part, demo voice)
-**Branch:** backend-agents (on GitHub, merged into `main`)
+**Current phase:** 4 (post-feature improvements; Ashish now owns frontend + backend, Sam and Daksh are done)
+**Next step:** see "WHERE WE ARE NOW" below
+**Branch:** work happens on feature branches merged into `main` (current: `ops-improvements`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
+
+## WHERE WE ARE NOW (read this first in a new chat) — updated 30 Sep 2026 evening
+
+Live: https://rakshanet-three.vercel.app (Vercel project `ashish-shukla81/rakshanet`, auto-deploys every push to `main`).
+Login is ON in production (env `DISPATCHER_PASSWORD` + `AUTH_SECRET` on Vercel; password known to Ashish, never commit it).
+Scripts can call APIs with header `x-dispatcher-password`. Reset live demo data: `curl -X POST https://rakshanet-three.vercel.app/api/seed -H "x-dispatcher-password: <password>"` (wipes live data; the live DB still has the OLD seed, run this before any demo).
+
+Done since Phase 3:
+- New single-screen UI (`app/page.js` + `components/`): emergencies left, map centre, AI Plan / Units / Activity tabs right; phone layout with bottom tabs; plain words everywhere (`components/labels.js`).
+- Login page `app/login`, guard `proxy.js`, `lib/auth.js`, `/api/auth/login|logout|me`.
+- Place search in New emergency (`/api/geocode`, OpenStreetMap Nominatim, Bengaluru only).
+- Fixed crash on "Change" location (only one layout/map rendered, `useIsDesktop`).
+- Emergency list: newest first. Gemini key rotation (`GEMINI_API_KEYS`, 2 keys on Vercel), model `gemini-3.5-flash-lite`.
+- Seed tuned: FIR-03 + FIR-04 out of service so escalation always happens with 2 new fires. `docs/demo-script.md` written.
+
+IN PROGRESS on branch `ops-improvements` (asked by Ashish, do these BEFORE the video):
+1. History: a full activity log (who reported, AI plans, approvals/rejections with dispatcher name, units sent, crew updates, units added/removed), filterable by emergency; AI steps expandable per plan. Needs a new `activities` collection + logging in routes + `GET /api/activity`.
+2. Units tab: spinner only on the pressed button; several vehicles can be updated quickly and show immediately (optimistic update); sections: On a job grouped by emergency, Free grouped by type, Out of service, Hospitals & shelters (collapsible).
+3. Recognisable vehicles: registration number (e.g. "KA 01 AM 4821") + base station shown everywhere (plan, units, map, emergency cards list their vehicles). Add `vehicleNumber` to Resource + seed script.
+4. Add unit / remove unit (POST /api/resources, DELETE /api/resources/:id, only if not on a job).
+Then update CONTRACT.md, README, demo script; test on the test DB; merge to main.
+
+AFTER THAT: tutorial video with the brag skill (full brag, any length) → save to `public/tutorial.mp4` and add a "▶ Watch video" button next to "How it works" in the header. Plan already written in `brag-output/brag-plan.md` (git-ignored), recorder script `brag-output/work/record.mjs` (records the real app via Chrome DevTools; will need updating after the UI changes). Hyperframes CLI is used via `npx -y hyperframes@0.8.97` (set `HYPERFRAMES_SKIP_SKILLS=1`).
+
+Testing without touching live data: run the app locally against the separate DB `rakshanet_test` (same Atlas cluster, replace `/rakshanet?` with `/rakshanet_test?` in MONGODB_URI), e.g. `MONGODB_URI=... DISPATCHER_PASSWORD=demo-shift npx next start -p 3058`.
+
+Security to-do after the hackathon (also in Ashish's private notes `docs/ashish-notes.md`): change MongoDB password, regenerate Gemini keys and the control room password (they were typed in chat), protect/limit geocode usage.
 
 ## Phase 0: Setup and skeleton (1:15 PM to 2:00 PM)
 
