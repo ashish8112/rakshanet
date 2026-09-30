@@ -128,6 +128,32 @@ export async function POST(request) {
           throw new DispatchConflict([{ resourceId: String(ids[0]), reason: "Incident became unavailable during dispatch" }]);
         }
       }
+      const destinationById = new Map(destinations.map((destination) => [String(destination.id), destination]));
+      const destinationCounts = new Map();
+      for (const assignment of assignments) {
+        if (assignment.destinationId) {
+          const id = String(assignment.destinationId);
+          destinationCounts.set(id, (destinationCounts.get(id) ?? 0) + 1);
+        }
+      }
+      for (const [destinationId, count] of destinationCounts) {
+        const destination = destinationById.get(destinationId);
+        const update = await Resource.updateOne(
+          {
+            _id: destinationId,
+            status: "available",
+            kind: { $in: ["hospital", "shelter"] },
+            "capacity.total": destination.capacity.total,
+            "capacity.used": destination.capacity.used,
+          },
+          { $inc: { "capacity.used": count } },
+          { session }
+        );
+        if (update.modifiedCount !== 1) {
+          const assignment = assignments.find((item) => String(item.destinationId) === destinationId);
+          throw new DispatchConflict([{ resourceId: String(assignment.resourceId), reason: "Destination capacity changed during dispatch" }]);
+        }
+      }
       const update = await Plan.updateOne(
         { _id: body.planId, status: "approved" },
         { $set: { status: "committed" } },

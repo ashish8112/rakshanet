@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { connectDB, Incident } from "@/lib/db";
+import { detectDuplicates } from "@/lib/tools";
 
 const INCIDENT_TYPES = new Set(["flood", "fire", "collapse", "accident", "medical", "other"]);
 
@@ -66,8 +67,10 @@ export async function POST(request) {
     });
     await incident.validate();
     await connectDB();
+    const duplicates = await detectDuplicates(incident);
+    incident.possibleDuplicateOf = duplicates[0]?.incidentId ?? null;
     await incident.save();
-    return NextResponse.json({ ok: true, data: { ...incident.toJSON(), duplicates: [] } }, { status: 201 });
+    return NextResponse.json({ ok: true, data: { ...incident.toJSON(), duplicates } }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError") {
       return errorResponse("INVALID_INCIDENT", "Could not create the incident; check the submitted fields.", 400);

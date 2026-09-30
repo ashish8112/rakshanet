@@ -72,7 +72,21 @@ export async function POST(request) {
       }
 
       if (assignedId && ["unavailable", "cleared"].includes(body.event)) {
-        await Incident.updateOne({ _id: assignedId }, { $pull: { assignedResources: resource._id } }, { session });
+        const incident = await Incident.findById(assignedId).session(session);
+        if (!incident) {
+          const error = new Error("Could not update the responder; its assigned incident is missing.");
+          error.code = "INVALID_TRANSITION";
+          throw error;
+        }
+        incident.assignedResources = incident.assignedResources.filter(
+          (id) => String(id) !== String(resource._id)
+        );
+        if (body.event === "unavailable" && incident.status === "dispatched") {
+          incident.status = "planned";
+        } else if (body.event === "cleared" && incident.assignedResources.length === 0) {
+          incident.status = "resolved";
+        }
+        await incident.save({ session });
       }
       await resource.save({ session });
       result = {

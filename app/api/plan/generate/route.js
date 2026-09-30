@@ -28,6 +28,7 @@ export async function POST(request) {
       return errorResponse(error.code, error.message, 404);
     }
     if (error.message?.startsWith("Could not call Gemini") || error.message?.startsWith("Could not parse Gemini") || error.message?.startsWith("Could not use Gemini")) {
+      console.error("plan/generate Gemini failure:", error.cause?.message ?? error.message);
       return errorResponse("AGENT_ERROR", error.message, 502);
     }
     console.error("plan/generate failed:", error);
