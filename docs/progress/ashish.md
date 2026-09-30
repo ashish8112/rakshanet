@@ -3,7 +3,7 @@
 Claude Code updates this file after every finished step. When asking for help in the Claude chat, paste this whole file.
 
 **Current phase:** 2
-**Next step:** 2.6 (plan versioning routes: approve, reject, edit, current, history, GET /api/logs)
+**Next step:** Gate 2 (team check on the live link), then Phase 3 step 3.1 (replanning only affected incidents)
 **Branch:** backend-agents (on GitHub, merged into `main`)
 
 Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is true.
@@ -45,7 +45,7 @@ Full step details: `docs/RUNBOOK.md`. Tick `[x]` when a step's "Done when" is tr
 - [x] 2.3 Command and Planning agent (`lib/agents/commandPlanning.js`): plain-language summary, alternatives with trade-offs, `changes` vs previous plan, or `investigate`
 - [x] 2.4 Orchestrator chain (`lib/orchestrator/generatePlan.js`): assess (only unassessed / triggering incident) -> route -> allocate -> command; max 2 investigate rounds; too-vague incidents go straight to `needs_info`; older proposed plans -> `superseded`. Tested end to end on a separate test DB (`rakshanet_test`): 3 incidents -> 6-7 assignments in ~8 s; vague report -> needs_info + question; answered via PATCH -> reassessed sev 5, 3 units, `changes` listed
 - [x] 2.5 Real tools used from the start (Sam's `lib/tools` was already on `main`); `stubTools.js` no longer imported
-- [ ] 2.6 Plan versioning + routes: approve, reject, edit, current, history, `GET /api/logs`
+- [x] 2.6 Plan routes: `GET /api/plan/current`, `GET /api/plan/history`, `POST /api/plan/:id/approve|reject|edit`, `GET /api/logs?planVersion=`. Logic in `lib/orchestrator/planActions.js`. Edit re-checks units with `validateAssignments`, recomputes distance/ETA with tools, saves a new proposed version (old one superseded) with a `changes` list. Only `proposed` plans can be approved/rejected (409 otherwise). Tested on test DB incl. full flow generate -> edit -> approve -> Sam's dispatch -> committed
 
 **Gate 2 (CORE FREEZE)**
 - [ ] On the live link: report -> plan with agent timeline -> approve -> dispatch -> units en route on the map
