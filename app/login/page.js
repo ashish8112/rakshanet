@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "@/components/api";
 import { Button, ErrorNote } from "@/components/ui";
+import { ThemeButton } from "@/components/theme";
 
 function LoginForm() {
   const params = useSearchParams();
@@ -60,7 +61,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50 px-4 py-10">
+      <ThemeButton className="absolute right-4 top-4" />
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-2xl text-white shadow-lg shadow-blue-200">

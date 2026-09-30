@@ -36,10 +36,10 @@ function Thinking({ steps, resources }) {
         })}
       </ol>
       {backup && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-200">The AI service is busy, so the backup rules are finishing this plan. You still approve it as usual.</p>}
-      <ol ref={feed} className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto rounded-2xl bg-slate-900 p-3 font-mono text-[11.5px] leading-relaxed">
+      <ol ref={feed} className="mt-4 min-h-0 flex-1 space-y-1.5 overflow-y-auto rounded-2xl bg-[#0f172a] p-3 font-mono text-[11.5px] leading-relaxed">
         {steps.length === 0 && <li className="text-slate-400">Starting…</li>}
         {steps.map((s, i) => (
-          <li key={i} className={s.kind === "tool" ? "text-sky-300" : s.kind === "status" ? "text-slate-400 italic" : "text-slate-100"}>
+          <li key={i} className={s.kind === "tool" ? "text-sky-300" : s.kind === "status" ? "text-slate-400 italic" : "text-[#f1f5f9]"}>
             <span className="text-slate-500">{new Date(s.at).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" })} </span>
             {s.kind === "tool" ? "🔧 " : s.kind === "status" ? "" : `${AGENT_INFO[s.agent]?.icon ?? "•"} `}
             {withPlates(s.message, resources)}

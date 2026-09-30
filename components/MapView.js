@@ -160,7 +160,7 @@ export default function MapView({ incidents, resources, selectedId, onSelectInci
         </div>
       </div>
       <button onClick={() => setDemoSpeed(speed === 1)}
-        className={`absolute right-4 top-4 z-[1000] rounded-full px-3.5 py-1.5 text-xs font-medium shadow-md ring-1 transition ${speed > 1 ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"}`}
+        className={`absolute right-4 top-4 z-[1000] rounded-full px-3.5 py-1.5 text-xs font-medium shadow-md ring-1 transition ${speed > 1 ? "bg-[#0f172a] text-white ring-[#0f172a]" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"}`}
         title="Simulated movement: make time pass 10x faster for demos">
         ⏩ Demo speed {speed > 1 ? "on (10×)" : "off"}
       </button>

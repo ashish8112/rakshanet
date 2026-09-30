@@ -6,6 +6,71 @@
   --foreground: #0f172a;
 }
 
+/* ---------- Dark mode ----------
+   Tailwind builds every colour from a CSS variable, so dark mode re-maps the palette once here
+   (light greys become dark greys, soft tints become deep tints) instead of styling every element twice.
+   The <html class="dark"> switch is set by the theme button (components/theme.js) before the page paints. */
+.dark {
+  color-scheme: dark;
+  --background: #0b1120;
+  --foreground: #f1f5f9;
+
+  --color-slate-50: #0b1120;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #2b3a52;
+  --color-slate-300: #475569;
+  --color-slate-400: #7c8aa0;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #b4c0d0;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+
+  --color-blue-50: #16213f;
+  --color-blue-100: #1e3a8a;
+  --color-blue-200: #1e40af;
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+  --color-blue-900: #dbeafe;
+  --color-blue-950: #eff6ff;
+  --color-indigo-50: #1e1b4b;
+
+  --color-emerald-50: #052e24;
+  --color-emerald-100: #064e3b;
+  --color-emerald-200: #065f46;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-900: #d1fae5;
+
+  --color-amber-50: #3a1d06;
+  --color-amber-100: #78350f;
+  --color-amber-200: #92400e;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-900: #fef3c7;
+
+  --color-red-50: #3b0d0d;
+  --color-red-100: #7f1d1d;
+  --color-red-200: #991b1b;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fee2e2;
+
+  --color-orange-50: #3b1405;
+  --color-orange-200: #9a3412;
+  --color-orange-700: #fdba74;
+}
+/* "white" is also used for text on coloured buttons, so only white surfaces are swapped. */
+.dark .bg-white { background-color: #111a2e; }
+.dark .bg-white\/95 { background-color: rgb(17 26 46 / 0.95); }
+.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(0.45) brightness(0.9) contrast(0.9); }
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip { background: #111a2e; color: #f1f5f9; }
+.dark .leaflet-control-zoom a { background: #111a2e !important; color: #e2e8f0 !important; border-color: #2b3a52 !important; }
+.dark .leaflet-container { background: #0b1120; }
+.dark .leaflet-control-attribution { background: rgb(17 26 46 / 0.8) !important; color: #94a3b8; }
+.dark .leaflet-control-attribution a { color: #93c5fd; }
+
 body {
   background: var(--background);
   color: var(--foreground);

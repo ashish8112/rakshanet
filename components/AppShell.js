@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/components/api";
 import CopilotBell from "@/components/CopilotBell";
+import { ThemeButton } from "@/components/theme";
 
 const PAGES = [
   ["/", "🚨", "Control room"],
@@ -25,7 +26,7 @@ const STEPS = [
 
 export function HelpDialog({ onClose }) {
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0f172a]/40 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-start justify-between">
           <div>
@@ -85,6 +86,7 @@ export default function AppShell({ data, children }) {
 
         <div className="flex shrink-0 items-center gap-1.5">
           <CopilotBell data={data} />
+          <ThemeButton />
           <button onClick={() => setShowHelp(true)} className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
             ❔<span className="hidden sm:inline"> How it works</span>
           </button>

@@ -144,7 +144,7 @@ function ControlRoom() {
         picking={picking} pickedLocation={pickedLocation}
         onPick={(point) => { setPickedLocation({ ...point, area: areaFor(point) }); setPicking(false); setPhoneView("list"); }} />
       {picking && (
-        <div className="absolute left-1/2 top-4 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-full bg-slate-900 px-5 py-2.5 text-sm text-white shadow-xl">
+        <div className="absolute left-1/2 top-4 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-full bg-[#0f172a] px-5 py-2.5 text-sm text-white shadow-xl">
           📍 Click where the emergency is
           <button onClick={() => setPicking(false)} className="rounded-full bg-white/15 px-3 py-0.5 hover:bg-white/25">Cancel</button>
         </div>
@@ -184,7 +184,7 @@ function ControlRoom() {
           </div>
         </div>
       )}
-      {toast && <div className="fixed left-1/2 top-20 z-[2000] -translate-x-1/2 rounded-full bg-slate-900 px-5 py-3 text-sm text-white shadow-xl">{toast}</div>}
+      {toast && <div className="fixed left-1/2 top-20 z-[2000] -translate-x-1/2 rounded-full bg-[#0f172a] px-5 py-3 text-sm text-white shadow-xl">{toast}</div>}
     </AppShell>
   );
 }
